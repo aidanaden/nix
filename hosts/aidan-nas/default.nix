@@ -10,6 +10,7 @@
     ../../modules/docker.nix
     ../../modules/samba.nix
     ../../modules/tailscale.nix
+    ../../modules/rclone.nix
     ../../modules/maintenance.nix
   ];
 

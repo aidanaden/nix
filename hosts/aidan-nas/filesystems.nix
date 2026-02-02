@@ -83,12 +83,7 @@
     };
   };
 
-  # Create mergerfs mount point
-  systemd.tmpfiles.rules = [
-    "d /srv/mergerfs/data 0755 root root -"
-  ];
-
-  # Symlinks for compatibility with existing paths
+  # Create mergerfs mount point and symlinks for compatibility
   # /data -> /srv/mergerfs/data
   # /config -> /srv/mergerfs/data/config
   # /compose -> /srv/mergerfs/data/compose
