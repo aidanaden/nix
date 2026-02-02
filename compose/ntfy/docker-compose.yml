@@ -1,0 +1,32 @@
+# ntfy - Push notifications (placeholder)
+# This is a placeholder for when you want self-hosted push notifications
+# For now, we're using Telegram directly via notify.sh
+#
+# Uncomment and deploy if you want ntfy instead of/in addition to Telegram
+
+# services:
+#   ntfy:
+#     image: binwiederhier/ntfy:latest
+#     container_name: ntfy
+#     restart: unless-stopped
+#     command:
+#       - serve
+#     environment:
+#       - TZ=Asia/Singapore
+#       - NTFY_BASE_URL=https://ntfy.aidanaden.com
+#       - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
+#     volumes:
+#       - ntfy_cache:/var/cache/ntfy
+#       - ntfy_etc:/etc/ntfy
+#     ports:
+#       - "8880:80"
+#     mem_limit: 64m
+#     healthcheck:
+#       test: ["CMD", "wget", "-q", "--tries=1", "http://localhost:80/v1/health", "-O", "-"]
+#       interval: 60s
+#       timeout: 10s
+#       retries: 3
+#
+# volumes:
+#   ntfy_cache:
+#   ntfy_etc:

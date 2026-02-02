@@ -1,0 +1,110 @@
+# Authelia Configuration
+# https://www.authelia.com/configuration/
+
+# Server settings
+server:
+  address: 'tcp://0.0.0.0:9091'
+
+# Logging
+log:
+  level: info
+  format: text
+
+# TOTP Configuration
+totp:
+  issuer: aidanaden.com
+  period: 30
+  skew: 1
+
+# WebAuthn (optional, for hardware keys)
+webauthn:
+  disable: false
+  display_name: Authelia
+  attestation_conveyance_preference: indirect
+  user_verification: preferred
+  timeout: 60s
+
+# Authentication backend (file-based)
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id
+      iterations: 3
+      memory: 65536
+      parallelism: 4
+      key_length: 32
+      salt_length: 16
+
+# Access control policy
+access_control:
+  default_policy: deny
+  
+  rules:
+    # Public endpoints (no auth required)
+    - domain:
+        - "vault.aidanaden.com"
+        - "nextcloud.aidanaden.com"
+        - "jellyfin.aidanaden.com"
+        - "photos.aidanaden.com"
+        - "books.aidanaden.com"
+        - "linkding.aidanaden.com"
+        - "wg.aidanaden.com"
+        - "conduit.aidanaden.com"
+      policy: bypass
+
+    # Two-factor required for sensitive services
+    - domain:
+        - "qb.aidanaden.com"
+        - "qb2.aidanaden.com"
+        - "transmission.aidanaden.com"
+        - "sonarr.aidanaden.com"
+        - "sonarr-mobile.aidanaden.com"
+        - "radarr.aidanaden.com"
+        - "radarr-mobile.aidanaden.com"
+        - "readarr.aidanaden.com"
+        - "jackett.aidanaden.com"
+        - "port.aidanaden.com"
+        - "omv.aidanaden.com"
+        - "pihole.aidanaden.com"
+        - "kuma.aidanaden.com"
+        # Sleepable services
+        - "pdf.aidanaden.com"
+        - "cyberchef.aidanaden.com"
+        - "squoosh.aidanaden.com"
+        - "convert.aidanaden.com"
+        - "vert.aidanaden.com"
+        - "image.aidanaden.com"
+        - "retrom.aidanaden.com"
+      policy: two_factor
+
+# Session configuration
+session:
+  name: authelia_session
+  domain: aidanaden.com
+  same_site: lax
+  expiration: 1h
+  inactivity: 5m
+  remember_me: 1M
+  
+  redis:
+    host: authelia-redis
+    port: 6379
+
+# Storage (SQLite for simplicity)
+storage:
+  local:
+    path: /data/db.sqlite3
+
+# Notifier (for password reset, etc.)
+# Using filesystem for now - can switch to SMTP later
+notifier:
+  disable_startup_check: false
+  filesystem:
+    filename: /data/notification.txt
+
+# Identity validation (for device registration)
+identity_validation:
+  reset_password:
+    jwt_lifespan: 5m
+    jwt_algorithm: HS256

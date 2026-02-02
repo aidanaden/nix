@@ -1,0 +1,27 @@
+# Nix build outputs
+result
+result-*
+
+# direnv
+.direnv/
+
+# macOS
+.DS_Store
+
+# Secrets (unencrypted)
+secrets/*.txt
+secrets/*.key
+
+# Age private keys (should be in ~/.config/sops/age/)
+*.age.key
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Temporary files
+*.tmp
+*.bak

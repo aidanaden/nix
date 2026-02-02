@@ -1,0 +1,62 @@
+services:
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    volumes:
+      - ./configuration.yml:/config/configuration.yml:ro
+      - ./users_database.yml:/config/users_database.yml:ro
+      - authelia_data:/data
+    environment:
+      - TZ=Asia/Singapore
+      # Secrets via environment (or use Docker secrets)
+      - AUTHELIA_JWT_SECRET_FILE=/run/secrets/jwt_secret
+      - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/session_secret
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/run/secrets/storage_encryption_key
+    secrets:
+      - jwt_secret
+      - session_secret
+      - storage_encryption_key
+    ports:
+      - "9091:9091"
+    networks:
+      - authelia
+    depends_on:
+      - authelia-redis
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9091/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  authelia-redis:
+    image: redis:alpine
+    container_name: authelia-redis
+    restart: unless-stopped
+    volumes:
+      - authelia_redis:/data
+    networks:
+      - authelia
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  authelia:
+    name: authelia
+
+volumes:
+  authelia_data:
+  authelia_redis:
+
+secrets:
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  session_secret:
+    file: ./secrets/session_secret.txt
+  storage_encryption_key:
+    file: ./secrets/storage_encryption_key.txt

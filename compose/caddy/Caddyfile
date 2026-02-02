@@ -1,0 +1,333 @@
+# Caddy configuration for aidanaden.com services
+# With Authelia SSO and Sablier integration
+
+{
+    # Use Cloudflare DNS challenge for wildcard cert
+    acme_dns cloudflare {env.CF_API_TOKEN}
+    
+    # Enable Sablier plugin
+    order sablier before reverse_proxy
+}
+
+# Authelia portal
+auth.aidanaden.com {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+    }
+    reverse_proxy authelia:9091
+}
+
+# Wildcard cert for all subdomains
+*.aidanaden.com {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+    }
+    
+    # ===== SLEEPABLE SERVICES (Sablier + Authelia) =====
+    
+    @pdf host pdf.aidanaden.com
+    handle @pdf {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names stirling-pdf-stirling-pdf-1
+            session_duration 15m
+            dynamic {
+                display_name "Stirling PDF"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:9080
+    }
+    
+    @cyberchef host cyberchef.aidanaden.com
+    handle @cyberchef {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names cyberchef
+            session_duration 15m
+            dynamic {
+                display_name "CyberChef"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:8916
+    }
+    
+    @squoosh host squoosh.aidanaden.com
+    handle @squoosh {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names squoosh
+            session_duration 15m
+            dynamic {
+                display_name "Squoosh"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:4411
+    }
+    
+    @vert host vert.aidanaden.com
+    handle @vert {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names vert
+            session_duration 15m
+            dynamic {
+                display_name "Vert Converter"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:7214
+    }
+    
+    @convert host convert.aidanaden.com
+    handle @convert {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names convertx
+            session_duration 15m
+            dynamic {
+                display_name "ConvertX"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:3242
+    }
+    
+    @image host image.aidanaden.com
+    handle @image {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        sablier {
+            names reubah
+            session_duration 15m
+            dynamic {
+                display_name "Reubah Image"
+                theme hacker-terminal
+            }
+        }
+        reverse_proxy 100.92.143.10:8088
+    }
+    
+    # ===== PROTECTED SERVICES (Authelia only) =====
+    
+    # Torrent clients
+    @qb host qb.aidanaden.com
+    handle @qb {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8181
+    }
+    
+    @qb2 host qb2.aidanaden.com
+    handle @qb2 {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8182
+    }
+    
+    @transmission host transmission.aidanaden.com
+    handle @transmission {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:9091
+    }
+    
+    # *arr stack
+    @sonarr host sonarr.aidanaden.com
+    handle @sonarr {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8989
+    }
+    
+    @sonarr-mobile host sonarr-mobile.aidanaden.com
+    handle @sonarr-mobile {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8990
+    }
+    
+    @radarr host radarr.aidanaden.com
+    handle @radarr {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:7878
+    }
+    
+    @radarr-mobile host radarr-mobile.aidanaden.com
+    handle @radarr-mobile {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:7879
+    }
+    
+    @readarr host readarr.aidanaden.com
+    handle @readarr {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8787
+    }
+    
+    @jackett host jackett.aidanaden.com
+    handle @jackett {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:9117
+    }
+    
+    # Admin panels
+    @port host port.aidanaden.com
+    handle @port {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:9000
+    }
+    
+    @omv host omv.aidanaden.com
+    handle @omv {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:4269
+    }
+    
+    @pihole host pihole.aidanaden.com
+    handle @pihole {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:8053
+    }
+    
+    @kuma host kuma.aidanaden.com
+    handle @kuma {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:2468
+    }
+    
+    @retrom host retrom.aidanaden.com
+    handle @retrom {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:5101
+    }
+    
+    # ===== PUBLIC SERVICES (own auth, bypass Authelia) =====
+    
+    # Media
+    @jellyfin host jellyfin.aidanaden.com
+    handle @jellyfin {
+        reverse_proxy 100.92.143.10:8096
+    }
+    
+    @photos host photos.aidanaden.com
+    handle @photos {
+        reverse_proxy 100.92.143.10:2283
+    }
+    
+    @books host books.aidanaden.com
+    handle @books {
+        reverse_proxy 100.92.143.10:5000
+    }
+    
+    @immichframe host frame.aidanaden.com
+    handle @immichframe {
+        reverse_proxy 100.92.143.10:3456
+    }
+    
+    # Cloud/Storage
+    @nextcloud host nextcloud.aidanaden.com
+    handle @nextcloud {
+        request_body {
+            max_size 0
+        }
+        reverse_proxy 100.92.143.10:11000 {
+            transport http {
+                read_timeout 86400s
+            }
+        }
+    }
+    
+    @nextcloud-aio host nextcloud-aio.aidanaden.com
+    handle @nextcloud-aio {
+        reverse_proxy 100.92.143.10:5880
+    }
+    
+    # Security
+    @vault host vault.aidanaden.com
+    handle @vault {
+        reverse_proxy 100.92.143.10:8321
+    }
+    
+    @wg host wg.aidanaden.com
+    handle @wg {
+        reverse_proxy 100.92.143.10:51821
+    }
+    
+    # Other
+    @linkding host linkding.aidanaden.com
+    handle @linkding {
+        reverse_proxy 100.92.143.10:9697
+    }
+    
+    @owncast host owncast.aidanaden.com
+    handle @owncast {
+        reverse_proxy 100.92.143.10:18080
+    }
+    
+    @conduit host conduit.aidanaden.com
+    handle @conduit {
+        reverse_proxy 100.92.143.10:8448
+    }
+    
+    # Fallback
+    handle {
+        respond "Service not found" 404
+    }
+}
