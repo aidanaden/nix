@@ -41,33 +41,28 @@ access_control:
   default_policy: deny
   
   rules:
-    # Public endpoints (no auth required)
+    # Public endpoints (no auth required - have their own auth)
     - domain:
         - "vault.aidanaden.com"
-        - "nextcloud.aidanaden.com"
         - "jellyfin.aidanaden.com"
         - "photos.aidanaden.com"
         - "books.aidanaden.com"
         - "linkding.aidanaden.com"
         - "wg.aidanaden.com"
-        - "conduit.aidanaden.com"
       policy: bypass
 
     # Two-factor required for sensitive services
     - domain:
         - "qb.aidanaden.com"
         - "qb2.aidanaden.com"
-        - "transmission.aidanaden.com"
         - "sonarr.aidanaden.com"
         - "sonarr-mobile.aidanaden.com"
         - "radarr.aidanaden.com"
         - "radarr-mobile.aidanaden.com"
         - "readarr.aidanaden.com"
-        - "jackett.aidanaden.com"
         - "port.aidanaden.com"
         - "omv.aidanaden.com"
         - "pihole.aidanaden.com"
-        - "kuma.aidanaden.com"
         # Sleepable services
         - "pdf.aidanaden.com"
         - "cyberchef.aidanaden.com"
