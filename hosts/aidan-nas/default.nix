@@ -7,6 +7,7 @@
     ./filesystems.nix
     ./networking.nix
     ./users.nix
+    ../../modules/secrets.nix
     ../../modules/docker.nix
     ../../modules/samba.nix
     ../../modules/tailscale.nix

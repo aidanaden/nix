@@ -4,7 +4,8 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "server";
-    # Auth key can be set via: sudo tailscale up --auth-key=<key>
+    # Auth key from sops-nix secrets
+    authKeyFile = config.sops.secrets.tailscale_auth_key.path;
   };
 
   # Open firewall for Tailscale
