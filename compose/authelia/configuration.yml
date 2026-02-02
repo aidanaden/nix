@@ -45,6 +45,7 @@ access_control:
     - domain:
         - "vault.aidanaden.com"
         - "jellyfin.aidanaden.com"
+        - "jellyseerr.aidanaden.com"
         - "photos.aidanaden.com"
         - "books.aidanaden.com"
         - "linkding.aidanaden.com"
@@ -60,6 +61,7 @@ access_control:
         - "radarr.aidanaden.com"
         - "radarr-mobile.aidanaden.com"
         - "readarr.aidanaden.com"
+        - "prowlarr.aidanaden.com"
         - "port.aidanaden.com"
         - "omv.aidanaden.com"
         - "pihole.aidanaden.com"
