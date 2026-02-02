@@ -11,6 +11,7 @@
     ../../modules/samba.nix
     ../../modules/tailscale.nix
     ../../modules/rclone.nix
+    ../../modules/glance.nix
     ../../modules/maintenance.nix
   ];
 
