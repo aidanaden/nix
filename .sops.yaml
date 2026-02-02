@@ -10,7 +10,7 @@
 keys:
   # Personal age key (generate with: age-keygen)
   # The public key looks like: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  - &aidan age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  - &aidan age15n3l3w3xhvxhrplaggmtjgnwqdvs9xy08lptz9kl3f5rnjzgagesy585pe
 
 creation_rules:
   # Encrypt all yaml files in secrets/ with the age key
