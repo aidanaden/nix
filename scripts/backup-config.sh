@@ -8,7 +8,7 @@ set -euo pipefail
 
 LOG="/var/log/backup-config.log"
 LOCK="/var/run/backup-config.lock"
-RCLONE_REMOTE="storj:backup/config"
+RCLONE_REMOTE="storj-crypt:config"
 
 # Path to backup
 CONFIG_DIR="/config"

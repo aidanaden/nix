@@ -10,7 +10,7 @@ set -euo pipefail
 
 LOG="/var/log/backup-critical.log"
 LOCK="/var/run/backup-critical.lock"
-RCLONE_REMOTE="storj:backup/critical"
+RCLONE_REMOTE="storj-crypt:critical"
 
 # Paths to backup
 VAULTWARDEN_DATA="/data/shared/vaultwarden"
