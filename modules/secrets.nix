@@ -48,9 +48,18 @@
         mode = "0400";
       };
 
-      # Telegram bot for notifications (used by maintenance scripts)
+      # Telegram bot for notifications (used by maintenance scripts + DIUN)
       telegram_bot_token = { };
       telegram_chat_id = { };
+    };
+
+    # sops templates — generate env files from secrets at activation time
+    # Used by containers that need secrets via --env-file
+    templates."diun-env" = {
+      content = ''
+        DIUN_NOTIF_TELEGRAM_TOKEN=${config.sops.placeholder.telegram_bot_token}
+        DIUN_NOTIF_TELEGRAM_CHATIDS=${config.sops.placeholder.telegram_chat_id}
+      '';
     };
   };
 

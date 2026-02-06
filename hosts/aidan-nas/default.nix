@@ -19,6 +19,9 @@
     ../../modules/caddy.nix
     ../../modules/authelia.nix
     ../../modules/adguardhome.nix
+    # Upgrades & monitoring
+    ../../modules/auto-upgrade.nix
+    ../../modules/diun.nix
   ];
 
   # System
