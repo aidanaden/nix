@@ -38,6 +38,7 @@ let
     port = { port = 9000; };    # Portainer
     kuma = { port = 2468; };    # Uptime Kuma
     retrom = { port = 5101; };
+    stash = { port = 9999; };
 
     # Utility services
     pdf = { port = 9080; };       # Stirling PDF

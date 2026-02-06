@@ -231,6 +231,15 @@ auth.aidanaden.com {
         reverse_proxy 100.92.143.10:5101
     }
     
+    @stash host stash.aidanaden.com
+    handle @stash {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:9999
+    }
+    
     # ===== PUBLIC SERVICES (own auth, bypass Authelia) =====
     
     # Media
