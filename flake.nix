@@ -25,7 +25,14 @@
       nixosConfigurations = {
         aidan-nas = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+          specialArgs = {
+            inherit inputs;
+            # Make unstable packages available for caddy.withPlugins
+            pkgs-unstable = import nixpkgs-unstable {
+              system = "x86_64-linux";
+              config.allowUnfree = true;
+            };
+          };
           modules = [
             disko.nixosModules.disko
             sops-nix.nixosModules.sops

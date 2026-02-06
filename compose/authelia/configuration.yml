@@ -61,7 +61,6 @@ access_control:
         - "radarr.aidanaden.com"
         - "radarr-mobile.aidanaden.com"
         - "readarr.aidanaden.com"
-        - "prowlarr.aidanaden.com"
         - "port.aidanaden.com"
         - "omv.aidanaden.com"
         - "pihole.aidanaden.com"

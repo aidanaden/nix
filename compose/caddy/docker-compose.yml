@@ -1,8 +1,6 @@
 services:
   caddy:
-    # TODO: Rebuild this image with new Sablier plugin path:
-    #   github.com/sablierapp/sablier-caddy-plugin@v1.0.1
-    # (old path github.com/acouvreur/sablier/plugins/caddy is archived)
+    build: .
     image: caddy-sablier-cf:latest
     container_name: caddy
     restart: unless-stopped

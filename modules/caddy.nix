@@ -19,6 +19,8 @@ let
 
     # Other
     linkding = { port = 9697; };
+    frame = { port = 3456; };    # Immich Frame
+    webdav = { port = 6065; };   # WebDAV (own basic auth, VLC compatible)
   };
 
   # Services requiring Authelia 2FA
@@ -26,12 +28,14 @@ let
     # Torrent clients
     qb = { port = 8181; };
     qb2 = { port = 8182; };
+    transmission = { port = 9091; };
 
     # *arr stack
     sonarr = { port = 8989; };
     sonarr-mobile = { port = 8990; };
     radarr = { port = 7878; };
     radarr-mobile = { port = 7879; };
+    bazarr = { port = 6767; };
 
 
     # Admin panels
@@ -45,6 +49,8 @@ let
     cyberchef = { port = 8916; };
     squoosh = { port = 4411; };
     convert = { port = 3242; };   # ConvertX
+    vert = { port = 7214; };
+    image = { port = 8088; };     # Reubah
 
     # AdGuard Home web UI
     adguard = { port = 3000; };

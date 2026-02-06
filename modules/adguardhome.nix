@@ -5,9 +5,9 @@
   services.adguardhome = {
     enable = true;
 
-    # Don't overwrite settings on restart (allows UI changes to persist)
-    # Set to true if you want full declarative control
-    mutableSettings = false;
+    # Allow UI-based changes to persist (password, clients, rewrites, etc.)
+    # Initial settings below are applied on first boot only
+    mutableSettings = true;
 
     # Open DNS ports
     openFirewall = true;
@@ -18,13 +18,13 @@
         address = "0.0.0.0:3000";
       };
 
-      # Users - password set via firstrun or manually
-      # Default: admin / admin (change on first login!)
+      # Users - initial admin account (change password via UI after first boot)
+      # With mutableSettings=true, UI changes persist across restarts
+      # Generate new hash: htpasswd -nbB admin 'yourpassword' | cut -d: -f2
       users = [
         {
           name = "admin";
-          # bcrypt hash of "admin" - CHANGE THIS after first login!
-          # Generate new hash: htpasswd -nbB admin 'yourpassword' | cut -d: -f2
+          # Placeholder - MUST change via AdGuard Home UI on first boot
           password = "$2y$10$hFGor5IZ9FQwnBbY5DFmYu3RqYQF1cNsNCQNjKVhFmKm/nHr2LPXC";
         }
       ];

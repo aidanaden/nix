@@ -16,6 +16,8 @@
     nameservers = [ "1.1.1.1" "8.8.8.8" ];
 
     # Firewall
+    # Note: HTTP/HTTPS ports (80, 443) are opened by caddy.nix
+    # Note: DNS port (53) is opened by adguardhome.nix
     firewall = {
       enable = true;
       allowPing = true;
@@ -23,25 +25,23 @@
       # TCP ports
       allowedTCPPorts = [
         22     # SSH
-        80     # HTTP
-        443    # HTTPS
         139    # Samba
         445    # Samba
-        53     # Pi-hole DNS
-        8053   # Pi-hole web
-        8096   # Jellyfin
-        9000   # Portainer
-        51821  # WireGuard UI
+        3000   # AdGuard Home web UI
+        8096   # Jellyfin (direct access)
+        9000   # Portainer (direct access)
       ];
 
       # UDP ports
       allowedUDPPorts = [
-        53     # Pi-hole DNS
         137    # Samba
         138    # Samba
+        443    # HTTP/3 QUIC (Caddy)
         41641  # Tailscale
-        51820  # WireGuard
       ];
+
+      # Trust Tailscale interface completely
+      trustedInterfaces = [ "tailscale0" ];
     };
   };
 

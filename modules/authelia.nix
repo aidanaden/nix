@@ -77,12 +77,8 @@
               "photos.aidanaden.com"
               "books.aidanaden.com"
               "linkding.aidanaden.com"
-              "wg.aidanaden.com"
-              "nextcloud.aidanaden.com"
-              "nextcloud-aio.aidanaden.com"
-              "owncast.aidanaden.com"
-              "conduit.aidanaden.com"
               "frame.aidanaden.com"
+              "webdav.aidanaden.com"
             ];
             policy = "bypass";
           }
@@ -98,14 +94,14 @@
               "sonarr-mobile.aidanaden.com"
               "radarr.aidanaden.com"
               "radarr-mobile.aidanaden.com"
-              "readarr.aidanaden.com"
+              "bazarr.aidanaden.com"
               # Admin panels
               "port.aidanaden.com"
-              "omv.aidanaden.com"
               "kuma.aidanaden.com"
               "retrom.aidanaden.com"
+              "stash.aidanaden.com"
               "adguard.aidanaden.com"
-              # Utility services (former sleepable)
+              # Utility services
               "pdf.aidanaden.com"
               "cyberchef.aidanaden.com"
               "squoosh.aidanaden.com"
@@ -163,8 +159,10 @@
     };
   };
 
-  # Ensure authelia user can read the users database
+  # Ensure authelia starts after mergerfs (user DB lives on /config/authelia)
   systemd.services.authelia-main = {
+    after = [ "mergerfs.service" ];
+    requires = [ "mergerfs.service" ];
     serviceConfig = {
       # Allow reading user database from /config
       ReadOnlyPaths = [ "/config/authelia" ];
@@ -176,22 +174,6 @@
     "d /config/authelia 0750 authelia-main authelia-main -"
   ];
 
-  # sops-nix secrets for Authelia
-  sops.secrets = {
-    authelia_jwt_secret = {
-      owner = "authelia-main";
-      group = "authelia-main";
-      mode = "0400";
-    };
-    authelia_storage_encryption_key = {
-      owner = "authelia-main";
-      group = "authelia-main";
-      mode = "0400";
-    };
-    authelia_session_secret = {
-      owner = "authelia-main";
-      group = "authelia-main";
-      mode = "0400";
-    };
-  };
+  # Note: Authelia secrets (authelia_jwt_secret, authelia_storage_encryption_key,
+  # authelia_session_secret) are defined in modules/secrets.nix
 }

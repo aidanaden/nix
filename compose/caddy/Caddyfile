@@ -194,6 +194,15 @@ auth.aidanaden.com {
         reverse_proxy 100.92.143.10:7879
     }
     
+    @bazarr host bazarr.aidanaden.com
+    handle @bazarr {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 100.92.143.10:6767
+    }
+    
     # Admin panels
     @port host port.aidanaden.com
     handle @port {
@@ -202,15 +211,6 @@ auth.aidanaden.com {
             copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
         }
         reverse_proxy 100.92.143.10:9000
-    }
-    
-    @omv host omv.aidanaden.com
-    handle @omv {
-        forward_auth authelia:9091 {
-            uri /api/authz/forward-auth
-            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-        }
-        reverse_proxy 100.92.143.10:4269
     }
     
     @kuma host kuma.aidanaden.com
@@ -273,6 +273,12 @@ auth.aidanaden.com {
     @linkding host linkding.aidanaden.com
     handle @linkding {
         reverse_proxy 100.92.143.10:9697
+    }
+    
+    # WebDAV - own basic auth (VLC compatible, no Authelia)
+    @webdav host webdav.aidanaden.com
+    handle @webdav {
+        reverse_proxy 100.92.143.10:6065
     }
     
     # Fallback

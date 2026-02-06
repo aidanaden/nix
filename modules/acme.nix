@@ -24,11 +24,5 @@
   # Ensure caddy can read ACME certs
   users.users.caddy.extraGroups = [ "acme" ];
 
-  # Secret for Cloudflare API token (as environment file format)
-  sops.secrets.cloudflare_env = {
-    # Format: CLOUDFLARE_DNS_API_TOKEN=your_token_here
-    owner = "acme";
-    group = "acme";
-    mode = "0400";
-  };
+  # Note: cloudflare_env secret is defined in modules/secrets.nix
 }
