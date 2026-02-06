@@ -7,7 +7,7 @@
     autoPrune = {
       enable = true;
       dates = "weekly";
-      flags = [ "--all" "--volumes" ];
+      flags = [ "--all" ];
     };
     daemon.settings = {
       # Log rotation

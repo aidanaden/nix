@@ -37,8 +37,6 @@ let
                         url: https://jellyfin.aidanaden.com
                       - title: Immich
                         url: https://photos.aidanaden.com
-                      - title: Nextcloud
-                        url: https://nextcloud.aidanaden.com
                       - title: Vaultwarden
                         url: https://vault.aidanaden.com
                   - title: Management
@@ -46,8 +44,8 @@ let
                     links:
                       - title: Portainer
                         url: https://port.aidanaden.com
-                      - title: Pi-hole
-                        url: https://pihole.aidanaden.com
+                      - title: AdGuard Home
+                        url: https://adguard.aidanaden.com
                       - title: Uptime Kuma
                         url: https://kuma.aidanaden.com
                   - title: Media
@@ -57,8 +55,6 @@ let
                         url: https://sonarr.aidanaden.com
                       - title: Radarr
                         url: https://radarr.aidanaden.com
-                      - title: Readarr
-                        url: https://readarr.aidanaden.com
                       - title: qBittorrent
                         url: https://qb.aidanaden.com
 
@@ -74,15 +70,12 @@ let
                   - title: Immich
                     url: https://photos.aidanaden.com
                     icon: si:immich
-                  - title: Nextcloud
-                    url: https://nextcloud.aidanaden.com
-                    icon: si:nextcloud
-                  - title: Vaultwarden
+                   - title: Vaultwarden
                     url: https://vault.aidanaden.com
                     icon: si:bitwarden
-                  - title: Pi-hole
-                    url: https://pihole.aidanaden.com
-                    icon: si:pihole
+                  - title: AdGuard Home
+                    url: https://adguard.aidanaden.com
+                    icon: si:adguard
 
               - type: releases
                 cache: 1h
@@ -91,8 +84,8 @@ let
                   - jellyfin/jellyfin
                   - linuxserver/docker-sonarr
                   - linuxserver/docker-radarr
-                  - nextcloud/server
                   - dani-garcia/vaultwarden
+                  - glanceapp/glance
 
           - size: small
             widgets:
@@ -120,7 +113,7 @@ in
   # Glance dashboard container
   # Run via Docker for simplicity (NixOS native service exists but Docker is easier)
   virtualisation.oci-containers.containers.glance = {
-    image = "glanceapp/glance:latest";
+    image = "glanceapp/glance:v0.8.4";
     ports = [ "8080:8080" ];
     volumes = [
       "${glanceConfig}:/app/glance.yml:ro"

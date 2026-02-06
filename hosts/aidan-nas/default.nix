@@ -14,24 +14,19 @@
     ../../modules/rclone.nix
     ../../modules/glance.nix
     ../../modules/maintenance.nix
+    # Reverse proxy & auth
+    ../../modules/acme.nix
+    ../../modules/caddy.nix
+    ../../modules/authelia.nix
+    ../../modules/adguardhome.nix
   ];
 
   # System
   system.stateVersion = "24.11";
   nixpkgs.config.allowUnfree = true;
 
-  # Nix settings
-  nix = {
-    settings = {
-      experimental-features = [ "nix-command" "flakes" ];
-      auto-optimise-store = true;
-    };
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 30d";
-    };
-  };
+  # Nix settings (gc + auto-optimise-store in modules/maintenance.nix)
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # Boot
   boot = {

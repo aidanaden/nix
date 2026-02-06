@@ -20,6 +20,37 @@
         group = "root";
         mode = "0600";
       };
+
+      # Cloudflare API token for ACME DNS-01 challenge
+      # Format: CLOUDFLARE_DNS_API_TOKEN=your_token_here
+      cloudflare_env = {
+        owner = "acme";
+        group = "acme";
+        mode = "0400";
+      };
+
+      # Authelia secrets (64+ character random strings)
+      authelia_jwt_secret = {
+        owner = "authelia-main";
+        group = "authelia-main";
+        mode = "0400";
+      };
+
+      authelia_storage_encryption_key = {
+        owner = "authelia-main";
+        group = "authelia-main";
+        mode = "0400";
+      };
+
+      authelia_session_secret = {
+        owner = "authelia-main";
+        group = "authelia-main";
+        mode = "0400";
+      };
+
+      # Telegram bot for notifications (used by maintenance scripts)
+      telegram_bot_token = { };
+      telegram_chat_id = { };
     };
   };
 

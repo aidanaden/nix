@@ -194,24 +194,6 @@ auth.aidanaden.com {
         reverse_proxy 100.92.143.10:7879
     }
     
-    @readarr host readarr.aidanaden.com
-    handle @readarr {
-        forward_auth authelia:9091 {
-            uri /api/authz/forward-auth
-            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-        }
-        reverse_proxy 100.92.143.10:8787
-    }
-    
-    @jackett host jackett.aidanaden.com
-    handle @jackett {
-        forward_auth authelia:9091 {
-            uri /api/authz/forward-auth
-            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-        }
-        reverse_proxy 100.92.143.10:9117
-    }
-    
     # Admin panels
     @port host port.aidanaden.com
     handle @port {
@@ -229,15 +211,6 @@ auth.aidanaden.com {
             copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
         }
         reverse_proxy 100.92.143.10:4269
-    }
-    
-    @pihole host pihole.aidanaden.com
-    handle @pihole {
-        forward_auth authelia:9091 {
-            uri /api/authz/forward-auth
-            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-        }
-        reverse_proxy 100.92.143.10:8053
     }
     
     @kuma host kuma.aidanaden.com
@@ -281,49 +254,16 @@ auth.aidanaden.com {
         reverse_proxy 100.92.143.10:3456
     }
     
-    # Cloud/Storage
-    @nextcloud host nextcloud.aidanaden.com
-    handle @nextcloud {
-        request_body {
-            max_size 0
-        }
-        reverse_proxy 100.92.143.10:11000 {
-            transport http {
-                read_timeout 86400s
-            }
-        }
-    }
-    
-    @nextcloud-aio host nextcloud-aio.aidanaden.com
-    handle @nextcloud-aio {
-        reverse_proxy 100.92.143.10:5880
-    }
-    
     # Security
     @vault host vault.aidanaden.com
     handle @vault {
         reverse_proxy 100.92.143.10:8321
     }
     
-    @wg host wg.aidanaden.com
-    handle @wg {
-        reverse_proxy 100.92.143.10:51821
-    }
-    
     # Other
     @linkding host linkding.aidanaden.com
     handle @linkding {
         reverse_proxy 100.92.143.10:9697
-    }
-    
-    @owncast host owncast.aidanaden.com
-    handle @owncast {
-        reverse_proxy 100.92.143.10:18080
-    }
-    
-    @conduit host conduit.aidanaden.com
-    handle @conduit {
-        reverse_proxy 100.92.143.10:8448
     }
     
     # Fallback

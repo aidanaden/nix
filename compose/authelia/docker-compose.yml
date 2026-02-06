@@ -1,6 +1,6 @@
 services:
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4.39.15
     container_name: authelia
     restart: unless-stopped
     volumes:
@@ -31,7 +31,7 @@ services:
       retries: 3
 
   authelia-redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: authelia-redis
     restart: unless-stopped
     volumes:
