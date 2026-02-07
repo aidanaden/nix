@@ -78,7 +78,6 @@
               "books.aidanaden.com"
               "linkding.aidanaden.com"
               "frame.aidanaden.com"
-              "webdav.aidanaden.com"
             ];
             policy = "bypass";
           }
@@ -97,7 +96,6 @@
               "bazarr.aidanaden.com"
               # Admin panels
               "port.aidanaden.com"
-              "kuma.aidanaden.com"
               "retrom.aidanaden.com"
               "stash.aidanaden.com"
               "adguard.aidanaden.com"

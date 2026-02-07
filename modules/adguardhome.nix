@@ -111,8 +111,9 @@
         filters_update_interval = 24;
 
         rewrites = [
-          # Local DNS rewrites - add your own here
-          # { domain = "nas.lan"; answer = "192.168.0.69"; }
+          # Route all *.aidanaden.com to NAS Tailscale IP
+          { domain = "*.aidanaden.com"; answer = "100.92.143.10"; }
+          { domain = "aidanaden.com"; answer = "100.92.143.10"; }
         ];
       };
 

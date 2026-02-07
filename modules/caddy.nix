@@ -20,7 +20,6 @@ let
     # Other
     linkding = { port = 9697; };
     frame = { port = 3456; };    # Immich Frame
-    webdav = { port = 6065; };   # WebDAV (own basic auth, VLC compatible)
   };
 
   # Services requiring Authelia 2FA
@@ -40,7 +39,6 @@ let
 
     # Admin panels
     port = { port = 9000; };    # Portainer
-    kuma = { port = 2468; };    # Uptime Kuma
     retrom = { port = 5101; };
     stash = { port = 9999; };
 

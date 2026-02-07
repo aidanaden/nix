@@ -51,6 +51,21 @@
       # Telegram bot for notifications (used by maintenance scripts + DIUN)
       telegram_bot_token = { };
       telegram_chat_id = { };
+
+      # Kavita token key (512+ bit, base64-encoded)
+      kavita_token_key = {
+        owner = "kavita";
+        mode = "0400";
+      };
+
+      # Vaultwarden environment file (contains ADMIN_TOKEN=...)
+      vaultwarden_env = {
+        owner = "vaultwarden";
+        mode = "0400";
+      };
+
+      # Cloudflare API token for DDNS updates
+      cloudflare_api_token = { };
     };
 
     # sops templates — generate env files from secrets at activation time

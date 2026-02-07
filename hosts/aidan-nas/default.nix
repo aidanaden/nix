@@ -22,6 +22,21 @@
     # Upgrades & monitoring
     ../../modules/auto-upgrade.nix
     ../../modules/diun.nix
+    # Media services
+    ../../modules/jellyfin.nix
+    ../../modules/sonarr.nix
+    ../../modules/radarr.nix
+    ../../modules/bazarr.nix
+    ../../modules/kavita.nix
+    ../../modules/immich.nix
+    # Security & utilities
+    ../../modules/vaultwarden.nix
+    ../../modules/cloudflare-ddns.nix
+    # OCI containers (no native NixOS module on 24.11)
+    ../../modules/qbittorrent.nix
+    ../../modules/stash.nix
+    ../../modules/linkding.nix
+    ../../modules/retrom.nix
   ];
 
   # System
@@ -37,9 +52,13 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    # Enable zswap for memory compression
-    kernelParams = [ "zswap.enabled=1" "zswap.compressor=zstd" "zswap.zpool=z3fold" ];
-    # Disable THP (better for Redis, Postgres, etc.)
+    # Enable zswap, disable THP (better for Redis, Postgres, etc.)
+    kernelParams = [
+      "zswap.enabled=1"
+      "zswap.compressor=zstd"
+      "zswap.zpool=z3fold"
+      "transparent_hugepage=never"
+    ];
     kernel.sysctl = {
       "vm.swappiness" = 10;
       "vm.vfs_cache_pressure" = 50;
@@ -67,6 +86,12 @@
     mergerfs
     smartmontools
   ];
+
+  # SSD I/O scheduler: use 'none' for NVMe/SSD, 'mq-deadline' for HDD
+  services.udev.extraRules = ''
+    ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="none"
+    ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="mq-deadline"
+  '';
 
   # SSH
   services.openssh = {
