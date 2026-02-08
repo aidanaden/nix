@@ -32,11 +32,21 @@
     # Security & utilities
     ../../modules/vaultwarden.nix
     ../../modules/cloudflare-ddns.nix
+    # Sync & documents
+    ../../modules/syncthing.nix
+    ../../modules/paperless.nix
+    # Monitoring & notifications
+    ../../modules/netdata.nix
+    ../../modules/dozzle.nix
+    ../../modules/healthchecks.nix
+    ../../modules/ntfy.nix
     # OCI containers (no native NixOS module on 24.11)
     ../../modules/qbittorrent.nix
     ../../modules/stash.nix
     ../../modules/linkding.nix
     ../../modules/retrom.nix
+    # Utility tools (sleepable via Sablier)
+    ../../modules/utility-tools.nix
   ];
 
   # System

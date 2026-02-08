@@ -78,6 +78,8 @@
               "books.aidanaden.com"
               "linkding.aidanaden.com"
               "frame.aidanaden.com"
+              "syncthing.aidanaden.com"
+              "ntfy.aidanaden.com"
             ];
             policy = "bypass";
           }
@@ -99,13 +101,20 @@
               "retrom.aidanaden.com"
               "stash.aidanaden.com"
               "adguard.aidanaden.com"
-              # Utility services
+              # Monitoring & management
+              "dozzle.aidanaden.com"
+              "netdata.aidanaden.com"
+              "paperless.aidanaden.com"
+              "healthchecks.aidanaden.com"
+              "dash.aidanaden.com"
+              # Utility services (sleepable via Sablier)
               "pdf.aidanaden.com"
               "cyberchef.aidanaden.com"
               "squoosh.aidanaden.com"
               "convert.aidanaden.com"
               "vert.aidanaden.com"
               "image.aidanaden.com"
+              "tools.aidanaden.com"
             ];
             policy = "two_factor";
           }

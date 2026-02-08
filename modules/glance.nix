@@ -47,6 +47,9 @@
                         { title = "Jellyfin"; url = "https://jellyfin.aidanaden.com"; }
                         { title = "Immich"; url = "https://photos.aidanaden.com"; }
                         { title = "Vaultwarden"; url = "https://vault.aidanaden.com"; }
+                        { title = "Kavita"; url = "https://books.aidanaden.com"; }
+                        { title = "Linkding"; url = "https://linkding.aidanaden.com"; }
+                        { title = "Paperless"; url = "https://paperless.aidanaden.com"; }
                       ];
                     }
                     {
@@ -55,6 +58,10 @@
                       links = [
                         { title = "Portainer"; url = "https://port.aidanaden.com"; }
                         { title = "AdGuard Home"; url = "https://adguard.aidanaden.com"; }
+                        { title = "Dozzle"; url = "https://dozzle.aidanaden.com"; }
+                        { title = "Netdata"; url = "https://netdata.aidanaden.com"; }
+                        { title = "Healthchecks"; url = "https://healthchecks.aidanaden.com"; }
+                        { title = "Syncthing"; url = "https://syncthing.aidanaden.com"; }
                       ];
                     }
                     {
@@ -63,7 +70,21 @@
                       links = [
                         { title = "Sonarr"; url = "https://sonarr.aidanaden.com"; }
                         { title = "Radarr"; url = "https://radarr.aidanaden.com"; }
+                        { title = "Bazarr"; url = "https://bazarr.aidanaden.com"; }
                         { title = "qBittorrent"; url = "https://qb.aidanaden.com"; }
+                      ];
+                    }
+                    {
+                      title = "Tools";
+                      color = "203 166 247";
+                      links = [
+                        { title = "IT-Tools"; url = "https://tools.aidanaden.com"; }
+                        { title = "Stirling PDF"; url = "https://pdf.aidanaden.com"; }
+                        { title = "CyberChef"; url = "https://cyberchef.aidanaden.com"; }
+                        { title = "Squoosh"; url = "https://squoosh.aidanaden.com"; }
+                        { title = "ConvertX"; url = "https://convert.aidanaden.com"; }
+                        { title = "Vert"; url = "https://vert.aidanaden.com"; }
+                        { title = "Reubah"; url = "https://image.aidanaden.com"; }
                       ];
                     }
                   ];
@@ -82,6 +103,8 @@
                     { title = "Immich"; url = "https://photos.aidanaden.com"; icon = "si:immich"; }
                     { title = "Vaultwarden"; url = "https://vault.aidanaden.com"; icon = "si:bitwarden"; }
                     { title = "AdGuard Home"; url = "https://adguard.aidanaden.com"; icon = "si:adguard"; }
+                    { title = "Syncthing"; url = "https://syncthing.aidanaden.com"; icon = "si:syncthing"; }
+                    { title = "Paperless"; url = "https://paperless.aidanaden.com"; icon = "si:paperlessngx"; }
                   ];
                 }
                 {
@@ -94,6 +117,8 @@
                     "linuxserver/docker-radarr"
                     "dani-garcia/vaultwarden"
                     "glanceapp/glance"
+                    "paperless-ngx/paperless-ngx"
+                    "syncthing/syncthing"
                   ];
                 }
               ];
