@@ -1,5 +1,4 @@
-{ ... }:
-
+_:
 # Disko configuration for OS disk ONLY (sda - Samsung SSD 870 EVO)
 # Data disks (sdb-sdi) are NOT managed by disko - they are preserved and mounted by UUID
 {
@@ -18,7 +17,7 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
+                mountOptions = ["umask=0077"];
               };
             };
             root = {
@@ -27,7 +26,7 @@
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
-                mountOptions = [ "noatime" "discard" ];
+                mountOptions = ["noatime" "discard"];
               };
             };
           };

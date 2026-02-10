@@ -1,6 +1,8 @@
-{ config, pkgs, ... }:
-
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   # Cloudflare DDNS update script using the API
   ddnsScript = pkgs.writeShellScriptBin "cloudflare-ddns" ''
     set -euo pipefail
@@ -56,13 +58,12 @@ let
       exit 1
     fi
   '';
-in
-{
+in {
   # Cloudflare DDNS update timer
   systemd.services.cloudflare-ddns = {
     description = "Update Cloudflare DNS record";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${ddnsScript}/bin/cloudflare-ddns";
@@ -71,7 +72,7 @@ in
 
   systemd.timers.cloudflare-ddns = {
     description = "Cloudflare DDNS update timer";
-    wantedBy = [ "timers.target" ];
+    wantedBy = ["timers.target"];
     timerConfig = {
       OnBootSec = "1min";
       OnUnitActiveSec = "5min";
@@ -80,5 +81,5 @@ in
   };
 
   # Sops secret for Cloudflare API token
-  sops.secrets.cloudflare_api_token = { };
+  sops.secrets.cloudflare_api_token = {};
 }

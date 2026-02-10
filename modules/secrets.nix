@@ -1,6 +1,4 @@
-{ config, ... }:
-
-{
+{config, ...}: {
   sops = {
     defaultSopsFile = ../secrets/secrets.yaml;
 
@@ -49,8 +47,8 @@
       };
 
       # Telegram bot for notifications (used by maintenance scripts + DIUN)
-      telegram_bot_token = { };
-      telegram_chat_id = { };
+      telegram_bot_token = {};
+      telegram_chat_id = {};
 
       # Kavita token key (512+ bit, base64-encoded)
       kavita_token_key = {
@@ -65,7 +63,7 @@
       };
 
       # Cloudflare API token for DDNS updates
-      cloudflare_api_token = { };
+      cloudflare_api_token = {};
     };
 
     # sops templates — generate env files from secrets at activation time

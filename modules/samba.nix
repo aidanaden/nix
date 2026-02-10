@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+_: {
   services.samba = {
     enable = true;
     openFirewall = true;
@@ -10,7 +8,7 @@
         "workgroup" = "WORKGROUP";
         "server string" = "aidan-nas";
         "netbios name" = "aidan-nas";
-        "security" = "user";  # Moved from securityType
+        "security" = "user"; # Moved from securityType
         "hosts allow" = "192.168.0. 100. 127.0.0.1 localhost";
         "hosts deny" = "0.0.0.0/0";
         "guest account" = "nobody";

@@ -1,6 +1,48 @@
-{ config, pkgs, lib, ... }:
+{config, ...}: let
+  domain = "aidanaden.com";
+  redisCfg = config.services.redis.servers.authelia;
 
-{
+  publicSubdomains = [
+    "vault"
+    "jellyfin"
+    "photos"
+    "books"
+    "linkding"
+    "frame"
+    "syncthing"
+    "ntfy"
+  ];
+
+  protectedSubdomains = [
+    "qb"
+    "qb2"
+    "sonarr"
+    "sonarr-mobile"
+    "radarr"
+    "radarr-mobile"
+    "bazarr"
+    "port"
+    "retrom"
+    "stash"
+    "adguard"
+    "dozzle"
+    "netdata"
+    "paperless"
+    "healthchecks"
+    "dash"
+    "pdf"
+    "cyberchef"
+    "squoosh"
+    "convert"
+    "vert"
+    "image"
+    "tools"
+  ];
+
+  mkFqdn = name: "${name}.${domain}";
+  publicDomains = builtins.map mkFqdn publicSubdomains;
+  protectedDomains = builtins.map mkFqdn protectedSubdomains;
+in {
   # Redis for Authelia session storage
   services.redis.servers.authelia = {
     enable = true;
@@ -69,53 +111,12 @@
         default_policy = "deny";
 
         rules = [
-          # Public services (have their own auth)
           {
-            domain = [
-              "vault.aidanaden.com"
-              "jellyfin.aidanaden.com"
-              "photos.aidanaden.com"
-              "books.aidanaden.com"
-              "linkding.aidanaden.com"
-              "frame.aidanaden.com"
-              "syncthing.aidanaden.com"
-              "ntfy.aidanaden.com"
-            ];
+            domain = publicDomains;
             policy = "bypass";
           }
-          # Protected services (require 2FA)
           {
-            domain = [
-              # Torrent clients
-              "qb.aidanaden.com"
-              "qb2.aidanaden.com"
-              "transmission.aidanaden.com"
-              # *arr stack
-              "sonarr.aidanaden.com"
-              "sonarr-mobile.aidanaden.com"
-              "radarr.aidanaden.com"
-              "radarr-mobile.aidanaden.com"
-              "bazarr.aidanaden.com"
-              # Admin panels
-              "port.aidanaden.com"
-              "retrom.aidanaden.com"
-              "stash.aidanaden.com"
-              "adguard.aidanaden.com"
-              # Monitoring & management
-              "dozzle.aidanaden.com"
-              "netdata.aidanaden.com"
-              "paperless.aidanaden.com"
-              "healthchecks.aidanaden.com"
-              "dash.aidanaden.com"
-              # Utility services (sleepable via Sablier)
-              "pdf.aidanaden.com"
-              "cyberchef.aidanaden.com"
-              "squoosh.aidanaden.com"
-              "convert.aidanaden.com"
-              "vert.aidanaden.com"
-              "image.aidanaden.com"
-              "tools.aidanaden.com"
-            ];
+            domain = protectedDomains;
             policy = "two_factor";
           }
         ];
@@ -126,9 +127,9 @@
         name = "authelia_session";
         cookies = [
           {
-            domain = "aidanaden.com";
-            authelia_url = "https://auth.aidanaden.com";
-            default_redirection_url = "https://auth.aidanaden.com";
+            inherit domain;
+            authelia_url = "https://auth.${domain}";
+            default_redirection_url = "https://auth.${domain}";
           }
         ];
         expiration = "1h";
@@ -136,8 +137,8 @@
         remember_me = "1M";
 
         redis = {
-          host = "127.0.0.1";
-          port = 6379;
+          host = redisCfg.bind;
+          inherit (redisCfg) port;
         };
       };
 
@@ -168,11 +169,11 @@
 
   # Ensure authelia starts after mergerfs (user DB lives on /config/authelia)
   systemd.services.authelia-main = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
     serviceConfig = {
       # Allow reading user database from /config
-      ReadOnlyPaths = [ "/config/authelia" ];
+      ReadOnlyPaths = ["/config/authelia"];
     };
   };
 

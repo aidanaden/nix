@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: {
   services.vaultwarden = {
     enable = true;
     dbBackend = "sqlite";

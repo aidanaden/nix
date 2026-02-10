@@ -1,11 +1,14 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: let
+  mergerfsDeps = {
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
+  };
+in {
   # Paperless-ngx - document management with OCR
   # Scan/photograph documents, auto-categorize, full-text search
   virtualisation.oci-containers.containers.paperless = {
     image = "ghcr.io/paperless-ngx/paperless-ngx:2.14.7";
-    ports = [ "8010:8000" ];
+    ports = ["8010:8000"];
     volumes = [
       "/config/paperless:/usr/src/paperless/data"
       "/data/shared/paperless/media:/usr/src/paperless/media"
@@ -13,10 +16,10 @@
       "/data/shared/paperless/export:/usr/src/paperless/export"
     ];
     environment = {
-      TZ = "Asia/Singapore";
+      TZ = config.time.timeZone;
       PAPERLESS_OCR_LANGUAGE = "eng";
       PAPERLESS_URL = "https://paperless.aidanaden.com";
-      PAPERLESS_TIME_ZONE = "Asia/Singapore";
+      PAPERLESS_TIME_ZONE = config.time.timeZone;
       PAPERLESS_TASK_WORKERS = "2";
       PAPERLESS_THREADS_PER_WORKER = "2";
       PAPERLESS_CONSUMER_RECURSIVE = "true";
@@ -36,10 +39,7 @@
   };
 
   # Wait for mergerfs (data on data disks)
-  systemd.services.docker-paperless = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
-  };
+  systemd.services.docker-paperless = mergerfsDeps;
 
   # Ensure directories exist
   systemd.tmpfiles.rules = [

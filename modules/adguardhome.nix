@@ -1,6 +1,4 @@
-{ config, pkgs, lib, ... }:
-
-{
+{config, ...}: {
   # AdGuard Home - DNS filtering and ad blocking
   services.adguardhome = {
     enable = true;
@@ -18,20 +16,12 @@
         address = "0.0.0.0:3000";
       };
 
-      # Users - initial admin account (change password via UI after first boot)
-      # With mutableSettings=true, UI changes persist across restarts
-      # Generate new hash: htpasswd -nbB admin 'yourpassword' | cut -d: -f2
-      users = [
-        {
-          name = "admin";
-          # Placeholder - MUST change via AdGuard Home UI on first boot
-          password = "$2y$10$hFGor5IZ9FQwnBbY5DFmYu3RqYQF1cNsNCQNjKVhFmKm/nHr2LPXC";
-        }
-      ];
+      # Do not ship a static admin password hash in git.
+      # Complete initial setup via the UI on first boot.
 
       # DNS server settings
       dns = {
-        bind_hosts = [ "0.0.0.0" ];
+        bind_hosts = ["0.0.0.0"];
         port = 53;
 
         # Upstream DNS servers (Cloudflare DoH)
@@ -64,7 +54,7 @@
 
         # Cache settings
         cache_size = 4194304; # 4MB
-        cache_ttl_min = 300;  # 5 minutes
+        cache_ttl_min = 300; # 5 minutes
         cache_ttl_max = 86400; # 24 hours
 
         # DNSSEC
@@ -102,9 +92,9 @@
         # Blocked services (empty = none blocked)
         blocked_services = {
           schedule = {
-            time_zone = "Asia/Singapore";
+            time_zone = config.time.timeZone;
           };
-          ids = [ ]; # e.g., ["facebook", "tiktok", "instagram"]
+          ids = []; # e.g., ["facebook", "tiktok", "instagram"]
         };
 
         # Update filters interval (in hours)
@@ -112,8 +102,14 @@
 
         rewrites = [
           # Route all *.aidanaden.com to NAS Tailscale IP
-          { domain = "*.aidanaden.com"; answer = "100.92.143.10"; }
-          { domain = "aidanaden.com"; answer = "100.92.143.10"; }
+          {
+            domain = "*.aidanaden.com";
+            answer = "100.92.143.10";
+          }
+          {
+            domain = "aidanaden.com";
+            answer = "100.92.143.10";
+          }
         ];
       };
 
@@ -158,7 +154,7 @@
 
   # Ensure AdGuard Home starts after network is up
   systemd.services.adguardhome = {
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
   };
 }

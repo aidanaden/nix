@@ -1,16 +1,19 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: let
+  mergerfsDeps = {
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
+  };
+in {
   # Healthchecks - cron job monitoring / dead man's switch
   # Monitors backup scripts, disk checks, and other scheduled tasks
   virtualisation.oci-containers.containers.healthchecks = {
     image = "healthchecks/healthchecks:v3.9";
-    ports = [ "8011:8000" ];
+    ports = ["8011:8000"];
     volumes = [
       "/config/healthchecks:/data"
     ];
     environment = {
-      TZ = "Asia/Singapore";
+      TZ = config.time.timeZone;
       # Django settings
       ALLOWED_HOSTS = "healthchecks.aidanaden.com,localhost";
       SITE_ROOT = "https://healthchecks.aidanaden.com";
@@ -18,8 +21,6 @@
       # Use SQLite (stored in /data)
       DB = "sqlite";
       DB_NAME = "/data/hc.sqlite";
-      # Secret key (generate a random one)
-      SECRET_KEY = "change-me-on-first-run";
       # Disable registration after initial setup
       REGISTRATION_OPEN = "False";
       # Ping settings
@@ -32,10 +33,7 @@
   };
 
   # Wait for mergerfs
-  systemd.services.docker-healthchecks = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
-  };
+  systemd.services.docker-healthchecks = mergerfsDeps;
 
   # Ensure config directory exists
   systemd.tmpfiles.rules = [

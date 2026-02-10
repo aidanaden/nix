@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+_: {
   # Syncthing - P2P device sync (replaces Nextcloud for file sync)
   services.syncthing = {
     enable = true;
@@ -9,7 +7,7 @@
     dataDir = "/data/shared/syncthing";
     configDir = "/config/syncthing";
 
-    openDefaultPorts = true;  # 22000/tcp + 22000/udp (sync) + 21027/udp (discovery)
+    openDefaultPorts = true; # 22000/tcp + 22000/udp (sync) + 21027/udp (discovery)
 
     settings = {
       gui = {
@@ -18,8 +16,8 @@
       };
 
       options = {
-        urAccepted = -1;           # Disable usage reporting
-        relaysEnabled = true;       # Allow relay connections for NAT traversal
+        urAccepted = -1; # Disable usage reporting
+        relaysEnabled = true; # Allow relay connections for NAT traversal
         localAnnounceEnabled = true;
         globalAnnounceEnabled = true;
       };
@@ -32,8 +30,8 @@
 
   # Wait for mergerfs (data on data disks)
   systemd.services.syncthing = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
   };
 
   # Ensure directories exist

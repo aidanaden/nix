@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: {
   services.immich = {
     enable = true;
     mediaLocation = "/data/shared/media/ncdata";
@@ -14,22 +12,22 @@
     machine-learning.enable = true;
 
     environment = {
-      TZ = "Asia/Singapore";
+      TZ = config.time.timeZone;
       # HDD storage type for optimal Postgres tuning
       DB_STORAGE_TYPE = "HDD";
     };
   };
 
   # Immich needs access to media files
-  users.users.immich.extraGroups = [ "users" ];
+  users.users.immich.extraGroups = ["users"];
 
   # Wait for mergerfs (media on data disks)
   systemd.services.immich-server = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
   };
   systemd.services.immich-machine-learning = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
   };
 }

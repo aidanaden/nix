@@ -1,6 +1,8 @@
-{ config, pkgs, inputs, ... }:
-
 {
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./disko.nix
     ./hardware.nix
@@ -54,7 +56,7 @@
   nixpkgs.config.allowUnfree = true;
 
   # Nix settings (gc + auto-optimise-store in modules/maintenance.nix)
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   # Boot
   boot = {

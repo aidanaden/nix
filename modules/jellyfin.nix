@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+_: {
   services.jellyfin = {
     enable = true;
     dataDir = "/config/jellyfin";
@@ -8,11 +6,11 @@
   };
 
   # Jellyfin needs access to media files
-  users.users.jellyfin.extraGroups = [ "users" ];
+  users.users.jellyfin.extraGroups = ["users"];
 
   # Wait for mergerfs (config + media on data disks)
   systemd.services.jellyfin = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
   };
 }

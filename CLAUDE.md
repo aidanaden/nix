@@ -4,8 +4,8 @@ NixOS configurations for personal infrastructure.
 
 ## Hosts
 
-| Host | Hardware | Purpose | Status |
-|------|----------|---------|--------|
+| Host        | Hardware                            | Purpose                 | Status   |
+| ----------- | ----------------------------------- | ----------------------- | -------- |
 | `aidan-nas` | Intel i5-2400S, 16GB RAM, 8x WD Red | Home NAS + media server | Planning |
 
 ## Quick Reference
@@ -104,22 +104,22 @@ docker run --rm authelia/authelia:latest \
 
 ### OS Disk (reformatted by disko)
 
-| Disk | Size | Model | Purpose |
-|------|------|-------|---------|
-| sda | 232GB | Samsung SSD 870 EVO | NixOS root |
+| Disk | Size  | Model               | Purpose    |
+| ---- | ----- | ------------------- | ---------- |
+| sda  | 232GB | Samsung SSD 870 EVO | NixOS root |
 
 ### Data Disks (preserved, mounted by UUID)
 
-| Disk | Size | UUID | Mount |
-|------|------|------|-------|
-| sdb | 1.8T | 48e46356-3374-4198-a5f2-fe1683b4a675 | /srv/disk1 |
-| sdc | 2.7T | f7609add-b8af-4045-bf46-a6a4954b52ef | /srv/disk2 |
-| sdd | 1.8T | 59990e40-4545-4024-8201-170449926f30 | /srv/disk3 |
-| sde | 3.6T | adaa0676-75c8-4193-8663-fa170324a134 | /srv/disk4 |
-| sdf | 3.6T | 0805c2d3-9704-4870-a253-60a6ec9c429c | /srv/disk5 |
-| sdg | 3.6T | 65193c76-48d3-48d8-bcee-837cf381dd47 | /srv/disk6 |
-| sdh | 3.6T | 9287a573-8dc5-4ae8-b362-4c8c80343984 | /srv/disk7 |
-| sdi | 2.7T | 15b064c3-da6e-4476-b141-19833c2acff9 | /srv/disk8 |
+| Disk | Size | UUID                                 | Mount      |
+| ---- | ---- | ------------------------------------ | ---------- |
+| sdb  | 1.8T | 48e46356-3374-4198-a5f2-fe1683b4a675 | /srv/disk1 |
+| sdc  | 2.7T | f7609add-b8af-4045-bf46-a6a4954b52ef | /srv/disk2 |
+| sdd  | 1.8T | 59990e40-4545-4024-8201-170449926f30 | /srv/disk3 |
+| sde  | 3.6T | adaa0676-75c8-4193-8663-fa170324a134 | /srv/disk4 |
+| sdf  | 3.6T | 0805c2d3-9704-4870-a253-60a6ec9c429c | /srv/disk5 |
+| sdg  | 3.6T | 65193c76-48d3-48d8-bcee-837cf381dd47 | /srv/disk6 |
+| sdh  | 3.6T | 9287a573-8dc5-4ae8-b362-4c8c80343984 | /srv/disk7 |
+| sdi  | 2.7T | 15b064c3-da6e-4476-b141-19833c2acff9 | /srv/disk8 |
 
 **mergerfs pool:** `/srv/disk*` -> `/srv/mergerfs/data` (~17TB)
 
@@ -159,11 +159,11 @@ docker run --rm authelia/authelia:latest \
 
 ## Backups
 
-| Data | Destination | Schedule | Retention |
-|------|-------------|----------|-----------|
-| Vaultwarden + /compose | storj:backup/critical/ | Daily 2am | 30 days |
-| /config | storj:backup/config/ | Weekly Sun 1am | 14 days |
-| Immich photos | storj:backup/immich/ | Daily 3am | N/A (sync) |
+| Data                   | Destination            | Schedule       | Retention  |
+| ---------------------- | ---------------------- | -------------- | ---------- |
+| Vaultwarden + /compose | storj:backup/critical/ | Daily 2am      | 30 days    |
+| /config                | storj:backup/config/   | Weekly Sun 1am | 14 days    |
+| Immich photos          | storj:backup/immich/   | Daily 3am      | N/A (sync) |
 
 ## Migration Checklist
 
@@ -199,6 +199,7 @@ docker run --rm authelia/authelia:latest \
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push

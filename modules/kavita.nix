@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: {
   services.kavita = {
     enable = true;
     dataDir = "/config/kavita";
@@ -14,12 +12,12 @@
   };
 
   # Kavita needs access to books/manga on mergerfs
-  users.users.kavita.extraGroups = [ "users" ];
+  users.users.kavita.extraGroups = ["users"];
 
   # Wait for mergerfs
   systemd.services.kavita = {
-    after = [ "mergerfs.service" ];
-    requires = [ "mergerfs.service" ];
+    after = ["mergerfs.service"];
+    requires = ["mergerfs.service"];
   };
 
   # Sops secret for Kavita token key

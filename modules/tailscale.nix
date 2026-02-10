@@ -1,6 +1,4 @@
-{ config, pkgs, ... }:
-
-{
+{config, ...}: {
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "server";
@@ -10,8 +8,8 @@
 
   # Open firewall for Tailscale
   networking.firewall = {
-    trustedInterfaces = [ "tailscale0" ];
-    allowedUDPPorts = [ config.services.tailscale.port ];
+    trustedInterfaces = ["tailscale0"];
+    allowedUDPPorts = [config.services.tailscale.port];
   };
 
   # Enable IP forwarding for subnet routing (if needed)

@@ -1,13 +1,11 @@
-{ config, pkgs, ... }:
-
-{
+_: {
   # Main user
   users.users.aidan = {
     isNormalUser = true;
     description = "Aidan";
     extraGroups = [
-      "wheel"      # sudo
-      "docker"     # docker access
+      "wheel" # sudo
+      "docker" # docker access
       "networkmanager"
     ];
     openssh.authorizedKeys.keys = [

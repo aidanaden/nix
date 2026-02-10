@@ -1,6 +1,4 @@
-{ config, pkgs, lib, ... }:
-
-{
+{config, ...}: {
   # DIUN - Docker Image Update Notifier
   # Monitors all running containers for image updates, notifies via Telegram.
   # Does NOT auto-update — notify-only (safer than Watchtower).
@@ -11,7 +9,7 @@
       "diun-data:/data"
     ];
     environment = {
-      TZ = "Asia/Singapore";
+      TZ = config.time.timeZone;
       # Check for updates daily at 6am
       DIUN_WATCH_SCHEDULE = "0 6 * * *";
       DIUN_WATCH_JITTER = "30s";
@@ -25,6 +23,6 @@
     environmentFiles = [
       config.sops.templates."diun-env".path
     ];
-    extraOptions = [ "--name=diun" ];
+    extraOptions = ["--name=diun"];
   };
 }
