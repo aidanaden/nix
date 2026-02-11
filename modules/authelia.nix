@@ -1,43 +1,13 @@
 {config, ...}: let
-  domain = "aidanaden.com";
+  catalog = import ./service-catalog.nix;
+  inherit (catalog) domain;
   redisCfg = config.services.redis.servers.authelia;
 
-  publicSubdomains = [
-    "vault"
-    "jellyfin"
-    "photos"
-    "books"
-    "linkding"
-    "frame"
-    "syncthing"
-    "ntfy"
-  ];
+  publicSubdomains = (builtins.attrNames catalog.services.public) ++ ["auth"];
 
-  protectedSubdomains = [
-    "qb"
-    "qb2"
-    "sonarr"
-    "sonarr-mobile"
-    "radarr"
-    "radarr-mobile"
-    "bazarr"
-    "port"
-    "retrom"
-    "stash"
-    "adguard"
-    "dozzle"
-    "netdata"
-    "paperless"
-    "healthchecks"
-    "dash"
-    "pdf"
-    "cyberchef"
-    "squoosh"
-    "convert"
-    "vert"
-    "image"
-    "tools"
-  ];
+  protectedSubdomains =
+    (builtins.attrNames catalog.services.protected)
+    ++ (builtins.attrNames catalog.services.sleepable);
 
   mkFqdn = name: "${name}.${domain}";
   publicDomains = builtins.map mkFqdn publicSubdomains;

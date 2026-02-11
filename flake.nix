@@ -93,6 +93,7 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             age
+            pre-commit
             sops
             nixos-anywhere
             treefmtEval.${system}.config.build.wrapper
