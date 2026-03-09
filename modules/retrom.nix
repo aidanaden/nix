@@ -70,6 +70,8 @@ in {
     systemd.tmpfiles.rules = [
       "d ${cfg.configPath} 0750 aidan users -"
       "d ${cfg.dataPath} 0750 aidan users -"
+      "d ${cfg.dataPath}/db 0750 aidan users -"
+      "d ${cfg.dataPath}/public 0750 aidan users -"
     ];
   };
 }
