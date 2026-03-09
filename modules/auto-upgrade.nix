@@ -1,4 +1,9 @@
-{pkgs, ...}: let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   # Upgrade notification scripts (use notifyScript from maintenance.nix via PATH)
   notifyUpgradeSuccess = pkgs.writeShellScript "notify-upgrade-success" ''
         set -euo pipefail
@@ -45,12 +50,12 @@
   '';
 in {
   system.autoUpgrade = {
-    enable = true;
+    enable = lib.mkDefault true;
 
     # TODO: Update to actual GitHub repo URL once remote is set up
     # The NAS will pull this repo and rebuild using the committed flake.lock.
     # To update nixpkgs: run `nix flake update` locally, test, push.
-    flake = "github:aidanaden/nixos-machines#aidan-nas";
+    flake = "github:aidanaden/nixos-machines#${config.networking.hostName}";
 
     # Stage as boot default only — don't restart running services
     operation = "boot";
@@ -93,7 +98,7 @@ in {
     path = [pkgs.coreutils pkgs.curl];
   };
 
-  systemd.services.nixos-upgrade = {
+  systemd.services.nixos-upgrade = lib.mkIf config.system.autoUpgrade.enable {
     onSuccess = ["notify-upgrade-success.service"];
     onFailure = ["notify-upgrade-failure.service"];
   };

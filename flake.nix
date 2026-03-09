@@ -83,6 +83,22 @@
           ./hosts/aidan-nas
         ];
       };
+
+      aidan-mini = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs;
+          pkgs-unstable = import nixpkgs-unstable {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
+        };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./hosts/aidan-mini
+        ];
+      };
     };
 
     # Development shells for each system

@@ -1,27 +1,75 @@
-{config, ...}: let
-  mergerfsDeps = {
-    after = ["mergerfs.service"];
-    requires = ["mergerfs.service"];
-  };
+{
+  config,
+  lib,
+  ...
+}: let
+  cfg = config.homelab.retrom;
 in {
-  # RetroM - retro game library manager (no NixOS module exists)
-  virtualisation.oci-containers.containers.retrom = {
-    image = "ghcr.io/jmberesford/retrom-service:latest";
-    ports = ["5101:5101"];
-    volumes = [
-      "/data/shared/games/roms:/app/library"
-      "/config/retrom:/app/config"
-      "/data/shared/retrom:/app/data"
-    ];
-    environment = {
-      TZ = config.time.timeZone;
+  options.homelab.retrom = {
+    libraryPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/data/shared/games/roms";
+      description = "Path to the RetroM ROM library.";
     };
-    extraOptions = [
-      "--name=retrom"
-      "--memory=512m"
-    ];
+
+    configPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/config/retrom";
+      description = "Path to the RetroM config directory.";
+    };
+
+    dataPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/data/shared/retrom";
+      description = "Path to the RetroM data directory.";
+    };
+
+    waitFor = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = ["mergerfs.service"];
+      description = "Additional services that RetroM should wait for.";
+    };
+
+    listenAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "0.0.0.0";
+      description = "RetroM listen address for Docker port publishing.";
+    };
+
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 5101;
+      description = "RetroM listen port.";
+    };
   };
 
-  # Wait for mergerfs
-  systemd.services.docker-retrom = mergerfsDeps;
+  config = {
+    # RetroM - retro game library manager (no NixOS module exists)
+    virtualisation.oci-containers.containers.retrom = {
+      image = "ghcr.io/jmberesford/retrom-service:latest";
+      ports = ["${cfg.listenAddress}:${toString cfg.port}:5101"];
+      volumes = [
+        "${cfg.libraryPath}:/app/library"
+        "${cfg.configPath}:/app/config"
+        "${cfg.dataPath}:/app/data"
+      ];
+      environment = {
+        TZ = config.time.timeZone;
+      };
+      extraOptions = [
+        "--name=retrom"
+        "--memory=512m"
+      ];
+    };
+
+    systemd.services.docker-retrom = lib.mkIf (cfg.waitFor != []) {
+      after = cfg.waitFor;
+      requires = cfg.waitFor;
+    };
+
+    systemd.tmpfiles.rules = [
+      "d ${cfg.configPath} 0750 aidan users -"
+      "d ${cfg.dataPath} 0750 aidan users -"
+    ];
+  };
 }
