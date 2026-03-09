@@ -54,6 +54,8 @@ in {
         "${cfg.dataPath}:/app/data"
       ];
       environment = {
+        COREPACK_HOME = "/app/data/corepack";
+        XDG_CACHE_HOME = "/app/data/cache";
         TZ = config.time.timeZone;
       };
       extraOptions = [
@@ -70,6 +72,8 @@ in {
     systemd.tmpfiles.rules = [
       "d ${cfg.configPath} 0750 aidan users -"
       "d ${cfg.dataPath} 0750 aidan users -"
+      "d ${cfg.dataPath}/cache 0750 aidan users -"
+      "d ${cfg.dataPath}/corepack 0750 aidan users -"
       "d ${cfg.dataPath}/db 0750 aidan users -"
       "d ${cfg.dataPath}/public 0750 aidan users -"
     ];
