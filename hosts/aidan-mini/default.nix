@@ -31,8 +31,6 @@
   };
 
   services.fstrim.enable = true;
-  system.autoUpgrade.enable = false;
-
   time.timeZone = "Asia/Singapore";
   i18n.defaultLocale = "en_US.UTF-8";
 

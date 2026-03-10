@@ -52,10 +52,9 @@ in {
   system.autoUpgrade = {
     enable = lib.mkDefault true;
 
-    # TODO: Update to actual GitHub repo URL once remote is set up
-    # The NAS will pull this repo and rebuild using the committed flake.lock.
+    # Pull the committed flake from GitHub for the matching host.
     # To update nixpkgs: run `nix flake update` locally, test, push.
-    flake = "github:aidanaden/nixos-machines#${config.networking.hostName}";
+    flake = "github:aidanaden/nix#${config.networking.hostName}";
 
     # Stage as boot default only — don't restart running services
     operation = "boot";
