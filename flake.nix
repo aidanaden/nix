@@ -241,6 +241,10 @@
       treefmt = treefmtEval.${system}.config.build.check self;
     });
 
+    packages = forAllSystems (system: {
+      colmena-cli = inputs.colmena.packages.${system}.colmena;
+    });
+
     nixosConfigurations = {
       aidan-nas = mkLinuxHost ./hosts/aidan-nas;
       aidan-mini = mkLinuxHost ./hosts/aidan-mini;
@@ -325,11 +329,12 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             age
-            pkgs.colmena
             pre-commit
             sops
             nixos-anywhere
             treefmtEval.${system}.config.build.wrapper
+          ] ++ [
+            inputs.colmena.packages.${system}.colmena
           ];
         };
       }
