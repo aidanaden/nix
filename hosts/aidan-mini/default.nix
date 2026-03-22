@@ -7,7 +7,6 @@
     ../../modules/docker.nix
     ../../modules/tailscale.nix
     ../../modules/auto-upgrade.nix
-    ../../modules/cloudflare-ddns.nix
     ../../modules/home-automation.nix
     ../../modules/syncthing.nix
     ../../modules/retrom.nix
@@ -68,8 +67,6 @@
     "net.ipv4.ip_forward" = 0;
     "net.ipv6.conf.all.forwarding" = 0;
   };
-
-  homelab.cloudflareDDNS.subdomain = "mini";
 
   homelab.homeAutomation = {
     enable = true;
