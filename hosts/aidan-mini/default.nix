@@ -7,6 +7,8 @@
     ../../modules/docker.nix
     ../../modules/tailscale.nix
     ../../modules/auto-upgrade.nix
+    ../../modules/cloudflare-ddns.nix
+    ../../modules/home-automation.nix
     ../../modules/syncthing.nix
     ../../modules/retrom.nix
     ../../modules/retro-lockd.nix
@@ -65,6 +67,24 @@
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 0;
     "net.ipv6.conf.all.forwarding" = 0;
+  };
+
+  homelab.cloudflareDDNS.subdomain = "mini";
+
+  homelab.homeAutomation = {
+    enable = true;
+
+    camera = {
+      name = "studio";
+      host = null;
+      credentialsFile = "/var/lib/home-automation/secrets/amcrest.env";
+    };
+
+    archive = {
+      remoteHost = "aidan@100.92.143.10";
+      remotePath = "/srv/mergerfs/data/security/catcam/review";
+      sshKeyPath = "/var/lib/home-automation/secrets/nas_archive_ed25519";
+    };
   };
 
   homelab.syncthing = {
