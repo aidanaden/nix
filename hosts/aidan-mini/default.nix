@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{config, pkgs, ...}: {
   imports = [
     ./disko.nix
     ./hardware.nix
@@ -59,7 +59,19 @@
   sops = {
     defaultSopsFile = ../../secrets/secrets.yaml;
     age.keyFile = "/var/lib/sops-nix/key.txt";
-    secrets.tailscale_auth_key = {};
+    secrets = {
+      tailscale_auth_key = {};
+      amcrest_rtsp_user = {};
+      amcrest_rtsp_password = {};
+    };
+
+    templates."amcrest-env" = {
+      mode = "0400";
+      content = ''
+        FRIGATE_RTSP_USER=${config.sops.placeholder.amcrest_rtsp_user}
+        FRIGATE_RTSP_PASSWORD=${config.sops.placeholder.amcrest_rtsp_password}
+      '';
+    };
   };
 
   services.tailscale.useRoutingFeatures = "client";
@@ -74,7 +86,7 @@
     camera = {
       name = "studio";
       host = "192.168.1.5";
-      credentialsFile = "/var/lib/home-automation/secrets/amcrest.env";
+      credentialsFile = config.sops.templates."amcrest-env".path;
     };
 
     archive = {
