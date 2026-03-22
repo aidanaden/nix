@@ -89,10 +89,8 @@
 
       record = {
         enabled = true;
-        retain = {
-          days = cfg.frigate.retainDays;
-          mode = "motion";
-        };
+        continuous.days = 0;
+        motion.days = cfg.frigate.retainDays;
         alerts.retain = {
           days = cfg.frigate.retainDays;
           mode = "motion";

@@ -3,7 +3,7 @@
 ## What the repo now manages
 
 - Home Assistant in Docker on port `8123`
-- Frigate in Docker on port `8971`
+- Frigate in Docker on HTTPS port `8971`
 - Mosquitto in Docker on loopback port `1883`
 - A dedicated Docker network for the stack
 - Tailscale-only exposure for Home Assistant and Frigate via `DOCKER-USER`
