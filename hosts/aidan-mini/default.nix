@@ -73,7 +73,7 @@
 
     camera = {
       name = "studio";
-      host = null;
+      host = "192.168.1.5";
       credentialsFile = "/var/lib/home-automation/secrets/amcrest.env";
     };
 
