@@ -18,10 +18,6 @@
     ffmpeg:
     media_source:
 
-    mqtt:
-      broker: mqtt
-      port: 1883
-
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
@@ -480,11 +476,14 @@ in {
             TZ = config.time.timeZone;
             LIBVA_DRIVER_NAME = "iHD";
           }
-          // lib.optionalAttrs (cfg.camera.credentialsFile == null) {
+          // lib.optionalAttrs (cfg.camera.host == null || cfg.camera.credentialsFile == null) {
             FRIGATE_RTSP_USER = "";
             FRIGATE_RTSP_PASSWORD = "";
           };
-        environmentFiles = lib.optional (cfg.camera.credentialsFile != null) cfg.camera.credentialsFile;
+        environmentFiles =
+          lib.optional
+          (cfg.camera.host != null && cfg.camera.credentialsFile != null)
+          cfg.camera.credentialsFile;
         extraOptions = [
           "--name=frigate"
           "--memory=2048m"
