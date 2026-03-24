@@ -269,6 +269,7 @@
     packages = forAllSystems (system: {
       colmena-cli = inputs.colmena.packages.${system}.colmena;
       rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
+      rotate-camera-password = self.packages.${system}.rotate-amcrest-rtsp-password;
     });
 
     apps = forAllSystems (system: {
@@ -276,6 +277,7 @@
         type = "app";
         program = "${self.packages.${system}.rotate-amcrest-rtsp-password}/bin/rotate-amcrest-rtsp-password";
       };
+      rotate-camera-password = self.apps.${system}.rotate-amcrest-rtsp-password;
     });
 
     nixosConfigurations = {
