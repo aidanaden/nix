@@ -324,7 +324,7 @@ def rotate_camera_password_via_ssh(
     try:
         run(
             ssh_prefix(deploy_user, deploy_host, ssh_options)
-            + ["python3", "-"],
+            + ["sudo", "docker", "exec", "-i", "frigate", "python3", "-"],
             input_text=remote_script,
             capture_output=True,
         )
