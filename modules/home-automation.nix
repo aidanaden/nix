@@ -8,58 +8,138 @@
   yaml = pkgs.formats.yaml {};
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
   homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
-lovelace:
-  dashboards:
-    frigate-cameras:
-      mode: yaml
-      title: Cameras
-      icon: mdi:cctv
-      show_in_sidebar: true
-      filename: frigate-mobile-dashboard.yaml
+    lovelace:
+      dashboards:
+        frigate-cameras:
+          mode: yaml
+          title: Cameras
+          icon: mdi:cctv
+          show_in_sidebar: true
+          filename: frigate-mobile-dashboard.yaml
 
-panel_iframe:
-  frigate:
-    title: Frigate
-    icon: mdi:cctv
-    url: ${cfg.homeAssistant.frigateExternalUrl}
+    panel_iframe:
+      frigate:
+        title: Frigate
+        icon: mdi:cctv
+        url: ${cfg.homeAssistant.frigateExternalUrl}
   '';
 
   homeAssistantDashboard = pkgs.writeText "frigate-mobile-dashboard.yaml" ''
-title: Cameras
-views:
-  - title: Studio
-    path: studio
-    icon: mdi:cctv
-    cards:
-      - type: picture-entity
-        entity: camera.${cfg.camera.name}
-        name: ${cfg.camera.name}
-        camera_view: live
-        show_state: false
-      - type: markdown
-        content: |
-          Open the Frigate sidebar item for recordings, review, and live stream selection.
+    title: Cameras
+    views:
+      - title: Studio
+        path: studio
+        icon: mdi:cctv
+        cards:
+          - type: picture-entity
+            entity: camera.${cfg.camera.name}
+            name: ${cfg.camera.name}
+            camera_view: live
+            show_state: false
+          - type: entities
+            title: Alerts
+            show_header_toggle: false
+            entities:
+              - entity: input_boolean.frigate_person_alerts
+                name: Person alerts armed
+              - entity: input_text.frigate_notify_action
+                name: Mobile notify action
+          - type: markdown
+            content: |
+              Open the Frigate sidebar item for recordings, review, and live stream selection.
+
+              Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
+  '';
+
+  homeAssistantNotificationsPackage = pkgs.writeText "frigate_notifications.yaml" ''
+    input_boolean:
+      frigate_person_alerts:
+        name: Frigate Person Alerts
+        icon: mdi:motion-sensor
+        initial: ${
+      if cfg.homeAssistant.personAlertsEnabledByDefault
+      then "true"
+      else "false"
+    }
+
+    input_text:
+      frigate_notify_action:
+        name: Frigate Notify Action
+        icon: mdi:cellphone-message
+        max: 255
+        initial: ${builtins.toJSON cfg.homeAssistant.mobileNotifyAction}
+
+    automation:
+      - id: frigate_mobile_person_alerts
+        alias: Frigate Mobile Person Alerts
+        mode: parallel
+        max: 10
+        trigger:
+          - platform: mqtt
+            topic: frigate/reviews
+            payload: alert
+            value_template: "{{ value_json['after']['severity'] }}"
+        condition:
+          - condition: state
+            entity_id: input_boolean.frigate_person_alerts
+            state: "on"
+          - condition: template
+            value_template: "{{ states(\"input_text.frigate_notify_action\") | trim != \"\" }}"
+          - condition: template
+            value_template: "{{ trigger.payload_json['type'] != 'end' }}"
+          - condition: template
+            value_template: "{{ trigger.payload_json['after']['data']['detections'] | count > 0 }}"
+        action:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ states(\"input_text.frigate_notify_action\") == \"persistent_notification.create\" }}"
+                sequence:
+                  - service: persistent_notification.create
+                    data:
+                      title: ${builtins.toJSON "${lib.toUpper cfg.camera.name} Alert"}
+                      message: >-
+                        {{ trigger.payload_json['after']['data']['objects'] | map('replace', '_', ' ') | map('title') | join(', ') }} detected in ${cfg.camera.name}.
+            default:
+              - service: "{{ states('input_text.frigate_notify_action') }}"
+                data:
+                  title: ${builtins.toJSON "${lib.toUpper cfg.camera.name} Alert"}
+                  message: >-
+                    {{ trigger.payload_json['after']['data']['objects'] | map('replace', '_', ' ') | map('title') | join(', ') }} detected in ${cfg.camera.name}.
+                  data:
+                    image: ${builtins.toJSON "${cfg.homeAssistant.externalUrl}/api/frigate/notifications/{{ trigger.payload_json['after']['data']['detections'][0] }}/thumbnail.jpg"}
+                    clickAction: ${builtins.toJSON cfg.homeAssistant.frigateExternalUrl}
+                    url: ${builtins.toJSON cfg.homeAssistant.frigateExternalUrl}
+                    tag: "{{ trigger.payload_json['after']['id'] }}"
+                    when: "{{ trigger.payload_json['after']['start_time'] | int }}"
+                    entity_id: "camera.{{ trigger.payload_json['after']['camera'] | replace('-', '_') | lower }}"
+                    ttl: 0
+                    priority: high
+                    channel: Frigate Alerts
+                    push:
+                      interruption-level: time-sensitive
   '';
 
   homeAssistantConfig = pkgs.writeText "home-assistant-configuration.yaml" ''
-default_config:
+    default_config:
 
-homeassistant:
-  name: Aidan Mini
-  time_zone: ${config.time.timeZone}
+    homeassistant:
+      name: Aidan Mini
+      time_zone: ${config.time.timeZone}
+      packages: !include_dir_named packages
 
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-${homeAssistantTrustedProxies}
-stream:
-ffmpeg:
-media_source:
-${homeAssistantLovelaceConfig}
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+    ${homeAssistantTrustedProxies}
+    stream:
+    ffmpeg:
+    media_source:
+    ${homeAssistantLovelaceConfig}
 
-automation: !include automations.yaml
-script: !include scripts.yaml
-scene: !include scenes.yaml
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
   '';
 
   mosquittoConfig = pkgs.writeText "mosquitto.conf" ''
@@ -304,10 +384,28 @@ in {
         description = "Reverse proxies allowed to forward requests to Home Assistant.";
       };
 
+      externalUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "https://ha.aidanaden.com";
+        description = "User-facing Home Assistant URL used in Frigate mobile notifications.";
+      };
+
       frigateExternalUrl = lib.mkOption {
         type = lib.types.str;
         default = "https://frigate.aidanaden.com";
         description = "User-facing Frigate URL for Home Assistant mobile navigation.";
+      };
+
+      mobileNotifyAction = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "Optional Home Assistant notification action, for example notify.mobile_app_your_phone.";
+      };
+
+      personAlertsEnabledByDefault = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether Frigate person alerts start armed in Home Assistant.";
       };
     };
 
@@ -555,6 +653,7 @@ in {
           "${cfg.homeAssistant.configDir}:/config"
           "${homeAssistantConfig}:/config/configuration.yaml:ro"
           "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
+          "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
         ];
         environment = {
           TZ = config.time.timeZone;
@@ -689,6 +788,8 @@ in {
       "f ${cfg.homeAssistant.configDir}/scripts.yaml 0640 root root -"
       "f ${cfg.homeAssistant.configDir}/scenes.yaml 0640 root root -"
       "d ${cfg.homeAssistant.configDir}/custom_components 0750 root root -"
+      "d ${cfg.homeAssistant.configDir}/packages 0750 root root -"
+      "r ${cfg.homeAssistant.configDir}/packages/frigate-notifications.yaml - - - -"
       "d ${cfg.homeAssistant.configDir}/www 0750 root root -"
       "d ${cfg.mqtt.dataDir} 0750 root root -"
       "d ${cfg.frigate.configDir} 0750 root root -"

@@ -41,24 +41,18 @@ The stack will still build with `camera.host = null`, but Frigate will run in a 
 ## Home Assistant post-deploy steps
 
 1. Finish Home Assistant onboarding and create the admin user.
-2. In Home Assistant, add the MQTT integration manually:
-   - host: `mqtt`
-   - port: `1883`
-   - username/password: leave blank
-3. Install HACS.
-4. Install the Frigate integration from HACS and configure it with:
-   - URL: `http://frigate:5000`
-   - no RTSP URL template override required
-   - the HA container can already reach `frigate:8554` for live viewing
-5. Install the custom Amcrest integration from:
+2. MQTT and the Frigate integration are now wired into the live HA instance already.
+   - MQTT host: `mqtt`
+   - MQTT port: `1883`
+   - Frigate URL: `http://frigate:5000`
+   - no RTSP URL template override is required because the HA container can already reach `frigate:8554`
+3. Install the custom Amcrest integration from:
    - `https://github.com/bcpearce/HomeAssistant-Amcrest-Custom`
-6. Add the Amcrest camera through the custom integration.
-7. Confirm the new HA sidebar items:
+4. Add the Amcrest camera through the custom integration if you want direct Amcrest control entities in HA.
+5. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
    - `Frigate` panel link
-8. Optionally install `advanced-camera-card` to replace the basic `camera.studio` card on the YAML dashboard.
-9. Install a Frigate mobile notification blueprint such as:
-   - `https://github.com/SgtBatten/HA_blueprints`
+6. Optionally install `advanced-camera-card` to replace the basic `camera.studio` card on the YAML dashboard.
 
 ## Mobile UX defaults
 
@@ -66,7 +60,23 @@ The repo now prewires a basic HA mobile experience:
 
 - Home Assistant shows a `Cameras` dashboard that expects `camera.studio` from the Frigate integration
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
+- Home Assistant now also exposes:
+  - `input_boolean.frigate_person_alerts`
+  - `input_text.frigate_notify_action`
 - The HA app should be your primary mobile surface, while the Frigate panel is the deeper review UI
+
+## Mobile alerts
+
+Frigate person alerts are now wired declaratively in Home Assistant, but they stay inert until you point them at a phone notifier.
+
+1. Install the Home Assistant mobile app and sign into `https://ha.aidanaden.com`
+2. Allow notifications on the phone
+3. In HA, set `input_text.frigate_notify_action` to your phone's notification action
+   - example: `notify.mobile_app_your_phone`
+   - HA-only fallback for testing: `persistent_notification.create`
+4. Turn on `input_boolean.frigate_person_alerts` when you want person alerts armed
+
+The automation listens to `frigate/reviews` with `severity = alert`, so cat-only detections stay reviewable in Frigate but do not notify.
 
 ## Camera setup checklist
 
