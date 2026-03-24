@@ -4,13 +4,36 @@
   ...
 }: let
   catalog = import ./service-catalog.nix;
-  inherit (catalog) domain upstream;
+  inherit (catalog) domain upstream tailscaleCIDR;
 
   publicServices = catalog.services.public;
   protectedServices = catalog.services.protected;
   sleepableServices = catalog.services.sleepable;
+  tailscaleOnlyServices = catalog.services.tailscaleOnly;
 
   mkFqdn = name: "${name}.${domain}";
+
+  upstreamHostFor = cfg: cfg.upstreamHost or upstream;
+
+  reverseProxyFor = cfg: let
+    target = "${upstreamHostFor cfg}:${toString cfg.port}";
+    scheme = cfg.scheme or "http";
+  in
+    if cfg ? extraConfig
+    then cfg.extraConfig
+    else if scheme == "https"
+    then ''
+      reverse_proxy https://${target} {
+        transport http {
+          ${
+            lib.optionalString
+            (cfg.tlsInsecureSkipVerify or false)
+            "tls_insecure_skip_verify"
+          }
+        }
+      }
+    ''
+    else "reverse_proxy ${target}";
 
   # Authelia forward_auth snippet
   autheliaForwardAuth = ''
@@ -25,8 +48,7 @@
     name = mkFqdn name;
     value = {
       useACMEHost = domain;
-      extraConfig =
-        cfg.extraConfig or "reverse_proxy ${upstream}:${toString cfg.port}";
+      extraConfig = reverseProxyFor cfg;
     };
   };
 
@@ -37,9 +59,7 @@
       useACMEHost = domain;
       extraConfig = ''
         ${autheliaForwardAuth}
-        ${
-          cfg.extraConfig or "reverse_proxy ${upstream}:${toString cfg.port}"
-        }
+        ${reverseProxyFor cfg}
       '';
     };
   };
@@ -59,7 +79,19 @@
             theme hacker-terminal
           }
         }
-        reverse_proxy ${upstream}:${toString cfg.port}
+        ${reverseProxyFor cfg}
+      '';
+    };
+  };
+
+  mkTailscaleOnlyHost = name: cfg: {
+    name = mkFqdn name;
+    value = {
+      useACMEHost = domain;
+      extraConfig = ''
+        @not_tailscale not remote_ip ${tailscaleCIDR}
+        respond @not_tailscale "Tailscale access only" 403
+        ${reverseProxyFor cfg}
       '';
     };
   };
@@ -74,6 +106,7 @@
   publicHosts = builtins.listToAttrs (lib.mapAttrsToList mkPublicHost publicServices);
   protectedHosts = builtins.listToAttrs (lib.mapAttrsToList mkProtectedHost protectedServices);
   sleepableHosts = builtins.listToAttrs (lib.mapAttrsToList mkSleepableHost sleepableServices);
+  tailscaleOnlyHosts = builtins.listToAttrs (lib.mapAttrsToList mkTailscaleOnlyHost tailscaleOnlyServices);
 
   catchAllHost = {
     "*.${domain}" = {
@@ -105,7 +138,7 @@ in {
       order sablier before reverse_proxy
     '';
 
-    virtualHosts = staticHosts // publicHosts // protectedHosts // sleepableHosts // catchAllHost;
+    virtualHosts = staticHosts // publicHosts // protectedHosts // sleepableHosts // tailscaleOnlyHosts // catchAllHost;
   };
 
   # Sablier - on-demand container start/stop manager

@@ -9,6 +9,7 @@
 
   domain = "aidanaden.com";
   upstream = "127.0.0.1";
+  tailscaleCIDR = "100.64.0.0/10";
 
   services = {
     # Public services: "own auth" or otherwise bypass Authelia.
@@ -79,6 +80,21 @@
         port = 8020;
         container = "it-tools";
         displayName = "IT-Tools";
+      };
+    };
+
+    # Tailscale-only services: proxied by NAS Caddy but only reachable
+    # when the request arrives over the Tailscale network.
+    tailscaleOnly = {
+      ha = {
+        upstreamHost = "100.82.7.106";
+        port = 8123;
+      };
+      frigate = {
+        upstreamHost = "100.82.7.106";
+        port = 8971;
+        scheme = "https";
+        tlsInsecureSkipVerify = true;
       };
     };
   };
