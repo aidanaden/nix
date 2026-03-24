@@ -64,6 +64,7 @@ ${homeAssistantTrustedProxies}
           }
         ];
         detect = {
+          enabled = true;
           width = cfg.camera.detectWidth;
           height = cfg.camera.detectHeight;
           fps = cfg.camera.detectFps;
@@ -98,6 +99,10 @@ ${homeAssistantTrustedProxies}
       };
 
       birdseye = {
+        enabled = true;
+      };
+
+      detect = {
         enabled = true;
       };
 
