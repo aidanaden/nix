@@ -228,6 +228,45 @@ def scp_prefix(ssh_options: list[str]) -> list[str]:
     return prefix
 
 
+def create_temp_workspace(
+    repo_root: Path,
+    deploy_revision: str,
+) -> tuple[str, Path, Path]:
+    staging_dir = Path(tempfile.mkdtemp(prefix="rotate-amcrest-staging."))
+
+    for _ in range(5):
+        workspace_name = f"rotate-amcrest-{uuid.uuid4().hex[:8]}"
+        workspace_dir = staging_dir / workspace_name
+        try:
+            run(
+                [
+                    "jj",
+                    "workspace",
+                    "add",
+                    "--name",
+                    workspace_name,
+                    "-r",
+                    deploy_revision,
+                    str(workspace_dir),
+                ],
+                cwd=repo_root,
+                capture_output=True,
+            )
+            return workspace_name, workspace_dir, staging_dir
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "").strip()
+            if "Workspace already exists" in detail:
+                continue
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            raise
+
+    shutil.rmtree(staging_dir, ignore_errors=True)
+    fail(
+        "Failed to allocate a temporary jj workspace "
+        "after multiple attempts."
+    )
+
+
 def build_remote_camera_rotation_script(
     *,
     scheme: str,
@@ -400,24 +439,19 @@ def deploy(
     deploy_system: str,
     ssh_options: list[str],
 ) -> None:
-    workspace_name = f"rotate-amcrest-{uuid.uuid4().hex[:8]}"
-    workspace_dir = Path(tempfile.mkdtemp(prefix="rotate-amcrest-workspace."))
-    remote_dir = f"/home/{deploy_user}/{workspace_dir.name}"
+    workspace_name = ""
+    workspace_dir: Path | None = None
+    staging_dir: Path | None = None
+    workspace_created = False
+    remote_dir = ""
 
     try:
-        run(
-            [
-                "jj",
-                "workspace",
-                "add",
-                "--name",
-                workspace_name,
-                "-r",
-                deploy_revision,
-                str(workspace_dir),
-            ],
-            cwd=repo_root,
+        workspace_name, workspace_dir, staging_dir = create_temp_workspace(
+            repo_root=repo_root,
+            deploy_revision=deploy_revision,
         )
+        workspace_created = True
+        remote_dir = f"/home/{deploy_user}/{workspace_dir.name}"
 
         workspace_secrets = workspace_dir / "secrets" / "secrets.yaml"
         workspace_secrets.parent.mkdir(parents=True, exist_ok=True)
@@ -490,12 +524,17 @@ print("Frigate streams are live.")
         except subprocess.CalledProcessError:
             pass
 
-        shutil.rmtree(workspace_dir, ignore_errors=True)
+        if staging_dir is not None:
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
-        try:
-            run(["jj", "workspace", "forget", workspace_name], cwd=repo_root)
-        except subprocess.CalledProcessError:
-            pass
+        if workspace_created:
+            try:
+                run(
+                    ["jj", "workspace", "forget", workspace_name],
+                    cwd=repo_root,
+                )
+            except subprocess.CalledProcessError:
+                pass
 
 
 def parse_args() -> argparse.Namespace:
@@ -526,6 +565,14 @@ def parse_args() -> argparse.Namespace:
         "--deploy",
         action="store_true",
         help="Deploy aidan-mini after updating the secret.",
+    )
+    parser.add_argument(
+        "--deploy-only",
+        action="store_true",
+        help=(
+            "Skip password rotation and deploy the current local secret "
+            "to aidan-mini."
+        ),
     )
     parser.add_argument(
         "--camera-host",
@@ -601,6 +648,22 @@ def main() -> int:
 
     if not secrets_file.is_file():
         fail(f"Secrets file not found: {secrets_file}")
+
+    if args.deploy_only:
+        deploy(
+            repo_root=repo_root,
+            secrets_file=secrets_file,
+            deploy_revision=args.deploy_revision,
+            deploy_host=args.deploy_host,
+            deploy_user=args.deploy_user,
+            deploy_system=args.deploy_system,
+            ssh_options=args.ssh_option,
+        )
+        print(
+            f"Deployed {args.deploy_system} from revision "
+            f"{args.deploy_revision}."
+        )
+        return 0
 
     rtsp_user = read_secret_value(secrets_file, "amcrest_rtsp_user")
     current_password = read_secret_value(secrets_file, "amcrest_rtsp_password")
