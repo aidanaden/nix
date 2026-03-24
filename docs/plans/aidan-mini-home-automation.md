@@ -41,14 +41,32 @@ The stack will still build with `camera.host = null`, but Frigate will run in a 
 ## Home Assistant post-deploy steps
 
 1. Finish Home Assistant onboarding and create the admin user.
-2. Install HACS.
-3. Install the custom Amcrest integration from:
+2. In Home Assistant, add the MQTT integration manually:
+   - host: `mqtt`
+   - port: `1883`
+   - username/password: leave blank
+3. Install HACS.
+4. Install the Frigate integration from HACS and configure it with:
+   - URL: `http://frigate:5000`
+   - no RTSP URL template override required
+   - the HA container can already reach `frigate:8554` for live viewing
+5. Install the custom Amcrest integration from:
    - `https://github.com/bcpearce/HomeAssistant-Amcrest-Custom`
-4. Install `advanced-camera-card`.
-5. Add the Frigate integration in Home Assistant.
 6. Add the Amcrest camera through the custom integration.
-7. Install a Frigate mobile notification blueprint such as:
+7. Confirm the new HA sidebar items:
+   - `Cameras` YAML dashboard
+   - `Frigate` panel link
+8. Optionally install `advanced-camera-card` to replace the basic `camera.studio` card on the YAML dashboard.
+9. Install a Frigate mobile notification blueprint such as:
    - `https://github.com/SgtBatten/HA_blueprints`
+
+## Mobile UX defaults
+
+The repo now prewires a basic HA mobile experience:
+
+- Home Assistant shows a `Cameras` dashboard that expects `camera.studio` from the Frigate integration
+- Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
+- The HA app should be your primary mobile surface, while the Frigate panel is the deeper review UI
 
 ## Camera setup checklist
 

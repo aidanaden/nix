@@ -6,26 +6,60 @@
 }: let
   cfg = config.homelab.homeAutomation;
   yaml = pkgs.formats.yaml {};
-  homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "        - ${proxy}\n") cfg.homeAssistant.trustedProxies;
+  homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
+  homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
+lovelace:
+  dashboards:
+    frigate-cameras:
+      mode: yaml
+      title: Cameras
+      icon: mdi:cctv
+      show_in_sidebar: true
+      filename: frigate-mobile-dashboard.yaml
+
+panel_iframe:
+  frigate:
+    title: Frigate
+    icon: mdi:cctv
+    url: ${cfg.homeAssistant.frigateExternalUrl}
+  '';
+
+  homeAssistantDashboard = pkgs.writeText "frigate-mobile-dashboard.yaml" ''
+title: Cameras
+views:
+  - title: Studio
+    path: studio
+    icon: mdi:cctv
+    cards:
+      - type: picture-entity
+        entity: camera.${cfg.camera.name}
+        name: ${cfg.camera.name}
+        camera_view: live
+        show_state: false
+      - type: markdown
+        content: |
+          Open the Frigate sidebar item for recordings, review, and live stream selection.
+  '';
 
   homeAssistantConfig = pkgs.writeText "home-assistant-configuration.yaml" ''
-    default_config:
+default_config:
 
-    homeassistant:
-      name: Aidan Mini
-      time_zone: ${config.time.timeZone}
+homeassistant:
+  name: Aidan Mini
+  time_zone: ${config.time.timeZone}
 
-    http:
-      use_x_forwarded_for: true
-      trusted_proxies:
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
 ${homeAssistantTrustedProxies}
-    stream:
-    ffmpeg:
-    media_source:
+stream:
+ffmpeg:
+media_source:
+${homeAssistantLovelaceConfig}
 
-    automation: !include automations.yaml
-    script: !include scripts.yaml
-    scene: !include scenes.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
   '';
 
   mosquittoConfig = pkgs.writeText "mosquitto.conf" ''
@@ -268,6 +302,12 @@ in {
           "192.168.0.69"
         ];
         description = "Reverse proxies allowed to forward requests to Home Assistant.";
+      };
+
+      frigateExternalUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "https://frigate.aidanaden.com";
+        description = "User-facing Frigate URL for Home Assistant mobile navigation.";
       };
     };
 
@@ -514,6 +554,7 @@ in {
         volumes = [
           "${cfg.homeAssistant.configDir}:/config"
           "${homeAssistantConfig}:/config/configuration.yaml:ro"
+          "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
         ];
         environment = {
           TZ = config.time.timeZone;
