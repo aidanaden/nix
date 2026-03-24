@@ -300,13 +300,23 @@ def parse_args() -> argparse.Namespace:
         prog="rotate-amcrest-rtsp-password",
         description=(
             "Rotate the Amcrest RTSP password, update sops, "
-            "and optionally deploy aidan-mini."
+            "and optionally deploy aidan-mini. "
+            "By default, the camera password is updated over the "
+            "Amcrest API."
         )
+    )
+    parser.add_argument(
+        "--manual-camera",
+        action="store_true",
+        help=(
+            "Do not call the Amcrest API. "
+            "Pause for a manual password change in the camera UI instead."
+        ),
     )
     parser.add_argument(
         "--update-camera",
         action="store_true",
-        help="Rotate the camera-side password via the Amcrest HTTP API.",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--deploy",
@@ -331,7 +341,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--camera-auth-user",
-        help="Auth user for --update-camera. Default: current RTSP user",
+        help=(
+            "Auth user for camera API rotation. "
+            "Default: current RTSP user"
+        ),
     )
     parser.add_argument(
         "--deploy-host",
@@ -392,7 +405,12 @@ def main() -> int:
             "Nothing to do."
         )
 
-    if args.update_camera:
+    if args.manual_camera:
+        input(
+            f"Change the {rtsp_user} password in the camera UI now, "
+            "then press Enter to continue."
+        )
+    else:
         rotate_camera_password(
             scheme=args.camera_scheme,
             host=args.camera_host,
@@ -403,11 +421,6 @@ def main() -> int:
             auth_user=args.camera_auth_user,
         )
         print(f"Camera password updated over API for user {rtsp_user}.")
-    else:
-        input(
-            f"Change the {rtsp_user} password in the camera UI now, "
-            "then press Enter to continue."
-        )
 
     update_sops_secret(secrets_file, rtsp_user, new_password)
     print(f"Updated amcrest_rtsp_password in {secrets_file}.")
