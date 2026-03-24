@@ -69,6 +69,10 @@ ${homeAssistantTrustedProxies}
           height = cfg.camera.detectHeight;
           fps = cfg.camera.detectFps;
         };
+        live.streams = {
+          "Main Stream" = "${cfg.camera.name}_main";
+          "Sub Stream" = "${cfg.camera.name}_sub";
+        };
         motion = {
           improve_contrast = true;
         };
