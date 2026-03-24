@@ -15,6 +15,14 @@ from pathlib import Path
 from typing import NoReturn
 
 
+class CameraUpdateError(RuntimeError):
+    pass
+
+
+class CameraReachabilityError(CameraUpdateError):
+    pass
+
+
 def fail(message: str) -> NoReturn:
     print(message, file=sys.stderr)
     raise SystemExit(1)
@@ -120,15 +128,11 @@ def update_sops_secret(
         temp_yaml.replace(secrets_file)
 
 
-def rotate_camera_password(
-    scheme: str,
-    host: str,
-    port: int,
+def resolve_camera_auth(
     target_user: str,
     current_password: str,
-    new_password: str,
     auth_user: str | None,
-) -> None:
+) -> tuple[str, str]:
     actual_auth_user = auth_user or target_user
     auth_password = current_password
 
@@ -139,6 +143,38 @@ def rotate_camera_password(
         if not auth_password:
             fail("Camera auth password cannot be empty.")
 
+    return actual_auth_user, auth_password
+
+
+def build_camera_request_url(
+    scheme: str,
+    host: str,
+    port: int,
+    target_user: str,
+    current_password: str,
+    new_password: str,
+) -> str:
+    query = urllib.parse.urlencode(
+        {
+            "action": "modifyPassword",
+            "name": target_user,
+            "pwd": new_password,
+            "pwdOld": current_password,
+        }
+    )
+    return f"{scheme}://{host}:{port}/cgi-bin/userManager.cgi?{query}"
+
+
+def rotate_camera_password_local(
+    scheme: str,
+    host: str,
+    port: int,
+    target_user: str,
+    current_password: str,
+    new_password: str,
+    actual_auth_user: str,
+    auth_password: str,
+) -> None:
     password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     base_url = f"{scheme}://{host}:{port}/"
     password_manager.add_password(
@@ -150,27 +186,31 @@ def rotate_camera_password(
     opener = urllib.request.build_opener(
         urllib.request.HTTPDigestAuthHandler(password_manager)
     )
-
-    query = urllib.parse.urlencode(
-        {
-            "action": "modifyPassword",
-            "name": target_user,
-            "pwd": new_password,
-            "pwdOld": current_password,
-        }
+    request_url = build_camera_request_url(
+        scheme=scheme,
+        host=host,
+        port=port,
+        target_user=target_user,
+        current_password=current_password,
+        new_password=new_password,
     )
-    request_url = f"{scheme}://{host}:{port}/cgi-bin/userManager.cgi?{query}"
 
     try:
         with opener.open(request_url, timeout=10) as response:
             body = response.read().decode("utf-8", errors="replace").strip()
     except urllib.error.HTTPError as exc:
-        fail(f"Camera password update failed: HTTP {exc.code}")
+        raise CameraUpdateError(
+            f"Camera password update failed: HTTP {exc.code}"
+        ) from exc
     except urllib.error.URLError as exc:
-        fail(f"Camera password update failed: {exc.reason}")
+        raise CameraReachabilityError(
+            f"Camera password update failed: {exc.reason}"
+        ) from exc
 
     if body != "OK":
-        fail(f"Camera password update did not return OK: {body}")
+        raise CameraUpdateError(
+            f"Camera password update did not return OK: {body}"
+        )
 
 
 def ssh_prefix(user: str, host: str, ssh_options: list[str]) -> list[str]:
@@ -186,6 +226,169 @@ def scp_prefix(ssh_options: list[str]) -> list[str]:
     for option in ssh_options:
         prefix.extend(["-o", option])
     return prefix
+
+
+def build_remote_camera_rotation_script(
+    *,
+    scheme: str,
+    host: str,
+    port: int,
+    target_user: str,
+    current_password: str,
+    new_password: str,
+    actual_auth_user: str,
+    auth_password: str,
+) -> str:
+    payload = {
+        "scheme": scheme,
+        "host": host,
+        "port": port,
+        "target_user": target_user,
+        "current_password": current_password,
+        "new_password": new_password,
+        "actual_auth_user": actual_auth_user,
+        "auth_password": auth_password,
+    }
+    payload_json = json.dumps(payload)
+    return f"""\
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
+
+payload = json.loads({payload_json!r})
+
+password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+base_url = (
+    f"{{payload['scheme']}}://{{payload['host']}}:{{payload['port']}}/"
+)
+password_manager.add_password(
+    None,
+    base_url,
+    payload["actual_auth_user"],
+    payload["auth_password"],
+)
+opener = urllib.request.build_opener(
+    urllib.request.HTTPDigestAuthHandler(password_manager)
+)
+query = urllib.parse.urlencode(
+    {{
+        "action": "modifyPassword",
+        "name": payload["target_user"],
+        "pwd": payload["new_password"],
+        "pwdOld": payload["current_password"],
+    }}
+)
+request_url = (
+    f"{{payload['scheme']}}://{{payload['host']}}:{{payload['port']}}"
+    f"/cgi-bin/userManager.cgi?{{query}}"
+)
+
+try:
+    with opener.open(request_url, timeout=10) as response:
+        body = response.read().decode("utf-8", errors="replace").strip()
+except urllib.error.HTTPError as exc:
+    raise SystemExit(f"Camera password update failed: HTTP {{exc.code}}")
+except urllib.error.URLError as exc:
+    raise SystemExit(f"Camera password update failed: {{exc.reason}}")
+
+if body != "OK":
+    raise SystemExit(f"Camera password update did not return OK: {{body}}")
+"""
+
+
+def rotate_camera_password_via_ssh(
+    *,
+    scheme: str,
+    host: str,
+    port: int,
+    target_user: str,
+    current_password: str,
+    new_password: str,
+    actual_auth_user: str,
+    auth_password: str,
+    deploy_host: str,
+    deploy_user: str,
+    ssh_options: list[str],
+) -> None:
+    remote_script = build_remote_camera_rotation_script(
+        scheme=scheme,
+        host=host,
+        port=port,
+        target_user=target_user,
+        current_password=current_password,
+        new_password=new_password,
+        actual_auth_user=actual_auth_user,
+        auth_password=auth_password,
+    )
+    try:
+        run(
+            ssh_prefix(deploy_user, deploy_host, ssh_options)
+            + ["python3", "-"],
+            input_text=remote_script,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or "").strip()
+        if detail:
+            raise CameraUpdateError(detail) from exc
+        raise CameraUpdateError(
+            f"Camera password update via {deploy_user}@{deploy_host} failed."
+        ) from exc
+
+
+def rotate_camera_password(
+    *,
+    scheme: str,
+    host: str,
+    port: int,
+    target_user: str,
+    current_password: str,
+    new_password: str,
+    auth_user: str | None,
+    deploy_host: str,
+    deploy_user: str,
+    ssh_options: list[str],
+) -> str:
+    actual_auth_user, auth_password = resolve_camera_auth(
+        target_user=target_user,
+        current_password=current_password,
+        auth_user=auth_user,
+    )
+    try:
+        rotate_camera_password_local(
+            scheme=scheme,
+            host=host,
+            port=port,
+            target_user=target_user,
+            current_password=current_password,
+            new_password=new_password,
+            actual_auth_user=actual_auth_user,
+            auth_password=auth_password,
+        )
+        return "local network"
+    except CameraReachabilityError as exc:
+        print(
+            (
+                f"{exc}. Retrying via {deploy_user}@{deploy_host}, "
+                "which should be on the same LAN as the camera."
+            ),
+            file=sys.stderr,
+        )
+        rotate_camera_password_via_ssh(
+            scheme=scheme,
+            host=host,
+            port=port,
+            target_user=target_user,
+            current_password=current_password,
+            new_password=new_password,
+            actual_auth_user=actual_auth_user,
+            auth_password=auth_password,
+            deploy_host=deploy_host,
+            deploy_user=deploy_user,
+            ssh_options=ssh_options,
+        )
+        return f"{deploy_user}@{deploy_host}"
 
 
 def deploy(
@@ -302,7 +505,8 @@ def parse_args() -> argparse.Namespace:
             "Rotate the Amcrest RTSP password, update sops, "
             "and optionally deploy aidan-mini. "
             "By default, the camera password is updated over the "
-            "Amcrest API."
+            "Amcrest API, with automatic SSH fallback via the "
+            "deploy host if the local machine cannot reach the camera."
         )
     )
     parser.add_argument(
@@ -349,7 +553,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--deploy-host",
         default="aidan-mini",
-        help="SSH host for deployment. Default: aidan-mini",
+        help=(
+            "SSH host for deployment and camera API fallback. "
+            "Default: aidan-mini"
+        ),
     )
     parser.add_argument(
         "--deploy-user",
@@ -411,7 +618,7 @@ def main() -> int:
             "then press Enter to continue."
         )
     else:
-        rotate_camera_password(
+        rotation_path = rotate_camera_password(
             scheme=args.camera_scheme,
             host=args.camera_host,
             port=args.camera_port,
@@ -419,8 +626,14 @@ def main() -> int:
             current_password=current_password,
             new_password=new_password,
             auth_user=args.camera_auth_user,
+            deploy_host=args.deploy_host,
+            deploy_user=args.deploy_user,
+            ssh_options=args.ssh_option,
         )
-        print(f"Camera password updated over API for user {rtsp_user}.")
+        print(
+            f"Camera password updated over API for user {rtsp_user} "
+            f"via {rotation_path}."
+        )
 
     update_sops_secret(secrets_file, rtsp_user, new_password)
     print(f"Updated amcrest_rtsp_password in {secrets_file}.")
