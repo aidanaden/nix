@@ -1,8 +1,10 @@
-{ pkgs, pkgs-unstable, ... }:
-let
-  unstable = pkgs-unstable;
-in
 {
+  pkgs,
+  pkgs-unstable,
+  ...
+}: let
+  unstable = pkgs-unstable;
+in {
   programs.nixvim = {
     # Dependencies
     # { 'Bilal2453/luvit-meta', lazy = true },
@@ -51,50 +53,50 @@ in
 
     autoCmd = [
       {
-        event = [ "FileType" ];
-        pattern = [ "go" "gomod" "gowork" "gotmpl" ];
+        event = ["FileType"];
+        pattern = ["go" "gomod" "gowork" "gotmpl"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart gopls') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "rust" ];
+        event = ["FileType"];
+        pattern = ["rust"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart rust_analyzer') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "zig" ];
+        event = ["FileType"];
+        pattern = ["zig"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart zls') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "typescript" "typescriptreact" "javascript" "javascriptreact" ];
+        event = ["FileType"];
+        pattern = ["typescript" "typescriptreact" "javascript" "javascriptreact"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart tsgo oxlint tailwindcss') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "svelte" ];
+        event = ["FileType"];
+        pattern = ["svelte"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart svelte tailwindcss') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "astro" ];
+        event = ["FileType"];
+        pattern = ["astro"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart astro tailwindcss') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "yaml" "yaml.docker-compose" ];
+        event = ["FileType"];
+        pattern = ["yaml" "yaml.docker-compose"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart yamlls') end";
       }
       {
-        event = [ "FileType" ];
-        pattern = [ "css" "scss" ];
+        event = ["FileType"];
+        pattern = ["css" "scss"];
         group = "kickstart-lsp-lazy";
         callback.__raw = "function() vim.cmd('LspStart tailwindcss') end";
       }

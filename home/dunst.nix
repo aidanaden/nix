@@ -1,10 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-{
+_: {
   services.dunst = {
     enable = true;
     # iconTheme = {

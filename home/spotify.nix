@@ -1,5 +1,4 @@
-{ pkgs, inputs, ... }:
-{
+_: {
   # programs.spicetify = {
   # enable = true;
   # enabledExtensions = with spicePkgs.extensions; [

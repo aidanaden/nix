@@ -1,5 +1,4 @@
-{ config, ... }:
-{
+{config, ...}: {
   imports = [
     ./default.nix
     ./aerospace.nix
@@ -46,7 +45,7 @@
     enable = true;
     config = {
       Label = "com.user.takopi";
-      ProgramArguments = [ "${config.home.profileDirectory}/bin/takopi" ];
+      ProgramArguments = ["${config.home.profileDirectory}/bin/takopi"];
       WorkingDirectory = "${config.home.homeDirectory}/projects/takopi-bot";
       EnvironmentVariables = {
         HOME = config.home.homeDirectory;
@@ -55,5 +54,4 @@
       RunAtLoad = true;
     };
   };
-
 }

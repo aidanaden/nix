@@ -1,5 +1,9 @@
-{ pkgs, pkgs-unstable, lib, ... }:
 {
+  pkgs,
+  pkgs-unstable,
+  lib,
+  ...
+}: {
   programs.nixvim = {
     extraConfigLuaPost = ''
       -- Generic escape hatch: temporarily disable format-on-save (globally or per-buffer).
@@ -50,7 +54,7 @@
           end
         '';
         formatters_by_ft = {
-          lua = [ "stylua" ];
+          lua = ["stylua"];
           # Conform can also run multiple formatters sequentially
           # python = [ "isort "black" ];
           #
@@ -59,7 +63,7 @@
           # javascript = [ [ "prettierd" "prettier" ] ];
           # markdown = [ "prettierd" ];
           # mdx = [ "prettierd" ];
-          rust = [ "rustfmt" ];
+          rust = ["rustfmt"];
           typescript = {
             __unkeyed-1 = "oxfmt";
             __unkeyed-3 = "oxlint";
@@ -90,8 +94,8 @@
           # yaml = [ "yamlfmt" ];
           # toml = [ "taplo" ];
           # sql = [ "sqlfluff" ];
-          nix = [ "nixfmt-rfc-style" ];
-          zig = [ "zigfmt" ];
+          nix = ["nixfmt-rfc-style"];
+          zig = ["zigfmt"];
           # "_" = [
           #   "squeeze_blanks"
           #   "trim_whitespace"
@@ -117,7 +121,7 @@
           };
           oxfmt = {
             command = lib.getExe pkgs-unstable.oxfmt;
-            args = [ "--stdin-filepath" "$FILENAME" ];
+            args = ["--stdin-filepath" "$FILENAME"];
           };
           # sqlfluff = {
           #   command = lib.getExe pkgs.sqlfluff;

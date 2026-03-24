@@ -15,9 +15,7 @@
   upstreamHostFor = cfg: cfg.upstreamHost or upstream;
 
   reverseProxyFor = cfg:
-    if cfg ? extraConfig
-    then cfg.extraConfig
-    else let
+    cfg.extraConfig or (let
       target = "${upstreamHostFor cfg}:${toString cfg.port}";
       scheme = cfg.scheme or "http";
     in
@@ -26,14 +24,14 @@
         reverse_proxy https://${target} {
           transport http {
             ${
-              lib.optionalString
-              (cfg.tlsInsecureSkipVerify or false)
-              "tls_insecure_skip_verify"
-            }
+          lib.optionalString
+          (cfg.tlsInsecureSkipVerify or false)
+          "tls_insecure_skip_verify"
+        }
           }
         }
       ''
-      else "reverse_proxy ${target}";
+      else "reverse_proxy ${target}");
 
   # Authelia forward_auth snippet
   autheliaForwardAuth = ''
@@ -71,7 +69,7 @@
       useACMEHost = domain;
       extraConfig = ''
         ${autheliaForwardAuth}
-        sablier {
+        sablier http://127.0.0.1:10000 {
           names ${cfg.container}
           session_duration 15m
           dynamic {
@@ -131,16 +129,29 @@ in {
   # Sablier - on-demand container start/stop manager
   virtualisation.oci-containers.containers.sablier = {
     image = "sablierapp/sablier:1.11.1";
+    ports = ["127.0.0.1:10000:10000"];
+    environment = {
+      DOCKER_HOST = "tcp://docker-socket-proxy:2375";
+    };
     extraOptions = [
       "--name=sablier"
       "--memory=64m"
+      "--network=docker-control"
     ];
     cmd = [
       "start"
       "--provider.name=docker"
     ];
-    volumes = [
-      "/var/run/docker.sock:/var/run/docker.sock:ro"
+  };
+
+  systemd.services.docker-sablier = {
+    after = [
+      "docker-control-network.service"
+      "docker-docker-socket-proxy.service"
+    ];
+    requires = [
+      "docker-control-network.service"
+      "docker-docker-socket-proxy.service"
     ];
   };
 

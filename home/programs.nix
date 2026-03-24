@@ -2,13 +2,12 @@
   pkgs,
   pkgs-unstable,
   terminal,
-  inputs ? { },
+  inputs ? {},
   ...
-}:
-let
+}: let
   unstable = pkgs-unstable;
-  isLinux = pkgs.stdenv.isLinux;
-  isDarwin = pkgs.stdenv.isDarwin;
+  inherit (pkgs.stdenv) isLinux;
+  inherit (pkgs.stdenv) isDarwin;
   isPackageAvailable = pkg: (builtins.tryEval pkg.outPath).success;
   darwinPackages = pkgs.lib.filter isPackageAvailable (with pkgs; [
     # Keep Darwin-only package set resilient to unsupported/broken nixpkgs attrs.
@@ -30,197 +29,199 @@ let
       exec uv tool run --python ${pkgs.python314}/bin/python3 --from takopi@latest takopi "$@"
     '';
   };
-in
-{
+in {
   home = {
-    packages = with pkgs; [
-      # neovim
+    packages = with pkgs;
+      [
+        # neovim
 
-      git
-      act # github action runner
+        git
+        act # github action runner
 
-      # node
-      bun
-      nodejs_22
-      nodePackages.pnpm
-      nodePackages.typescript
-      nodePackages.typescript-language-server
+        # node
+        bun
+        nodejs_22
+        nodePackages.pnpm
+        nodePackages.typescript
+        nodePackages.typescript-language-server
 
-      # node webpack analysing
-      # nodePackages.webpack
-      # nodePackages.webpack-cli
+        # node webpack analysing
+        # nodePackages.webpack
+        # nodePackages.webpack-cli
 
-      # rush
-      # nodePackages.rush
+        # rush
+        # nodePackages.rush
 
-      # rust
-      rustup
+        # rust
+        rustup
 
-      # go
-      unstable.goreleaser
+        # go
+        unstable.goreleaser
 
-      # make
-      gnumake
+        # make
+        gnumake
 
-      # libusb
-      libusb1
-      pkg-config
+        # libusb
+        libusb1
+        pkg-config
 
-      # python
-      python314
-      pyenv
-      uv
-      ruff
+        # python
+        python314
+        pyenv
+        uv
+        ruff
 
-      # clickhouse
-      clickhouse
+        # clickhouse
+        clickhouse
 
-      # command line tools
-      stow
-      fd
-      ripgrep
-      tldr
-      fastfetch
+        # command line tools
+        stow
+        fd
+        ripgrep
+        tldr
+        fastfetch
 
-      # encryption & secrets
-      age
-      sops
+        # encryption & secrets
+        age
+        sops
 
-      # cloud specific
-      flyctl
-      turso-cli
-      google-cloud-sdk
+        # cloud specific
+        flyctl
+        turso-cli
+        google-cloud-sdk
 
-      # video
-      yt-dlp
+        # video
+        yt-dlp
 
-      # video player and scripts (Linux only - wayland dependency)
-      ] ++ pkgs.lib.optionals isLinux [
-      mpv-unwrapped
+        # video player and scripts (Linux only - wayland dependency)
+      ]
+      ++ pkgs.lib.optionals isLinux [
+        mpv-unwrapped
 
-      # japanese-learning
-      mpvScripts.mpvacious
+        # japanese-learning
+        mpvScripts.mpvacious
 
-      # torrents (Linux only - Qt/wayland dependency)
-      qbittorrent
+        # torrents (Linux only - Qt/wayland dependency)
+        qbittorrent
 
-      # discord client (Linux only - wayland dependency)
-      unstable.vesktop
+        # discord client (Linux only - wayland dependency)
+        unstable.vesktop
 
-      # telegram (Linux only - wayland dependency)
-      telegram-desktop
-      ayugram-desktop
-      ] ++ [
+        # telegram (Linux only - wayland dependency)
+        telegram-desktop
+        ayugram-desktop
+      ]
+      ++ [
+        # wireguard ui
+        unstable.wireguard-ui
 
-      # wireguard ui
-      unstable.wireguard-ui
+        # dog replacement
+        dogdns
 
-      # dog replacement
-      dogdns
+        # lshw alternative
+        inxi
 
-      # lshw alternative
-      inxi
+        # disk usage analyser
+        unstable.ncdu
 
-      # disk usage analyser
-      unstable.ncdu
+        # jujutsu tui
+        unstable.lazyjj
+        unstable.jjui
 
-      # jujutsu tui
-      unstable.lazyjj
-      unstable.jjui
+        # docker cli
+        unstable.lazydocker
 
-      # docker cli
-      unstable.lazydocker
+        # ai coding agent memory
+        unstable.beads
 
-      # ai coding agent memory
-      unstable.beads
+        # telegram coding-agent bridge
+        takopi
 
-      # telegram coding-agent bridge
-      takopi
+        # ps alternative
+        unstable.procs
 
-      # ps alternative
-      unstable.procs
+        # diff alternative
+        difftastic
 
-      # diff alternative
-      difftastic
+        # generate books from markdown (gameboy pandocs)
+        mdbook
 
+        # note-taking
+        obsidian
 
-      # generate books from markdown (gameboy pandocs)
-      mdbook
+        # solana dev tools (solana-cli, anchor)
+        # unstable.solana-cli
+        # unstable.anchor
 
-      # note-taking
-      obsidian
+        # zig
+        unstable.zig
 
-      # solana dev tools (solana-cli, anchor)
-      # unstable.solana-cli
-      # unstable.anchor
+        # local https certs
+        mkcert
 
-      # zig
-      unstable.zig
+        # c build tools
+        ninja
+        cmake
+        automake
+        autoconf
 
-      # local https certs
-      mkcert
+        # reverse engineering
+        ghidra
 
-      # c build tools
-      ninja
-      cmake
-      automake
-      autoconf
+        # utm virtualisation
+        utm
 
-      # reverse engineering
-      ghidra
+        # radicle
+        radicle-node
+        radicle-explorer
 
-      # utm virtualisation
-      utm
+        # httpie, curl alternative
+        xh
 
-      # radicle
-      radicle-node
-      radicle-explorer
+        # swf flash game decompiler
+        jpexs
 
-      # httpie, curl alternative
-      xh
+        # rust command completion timer
+        hyperfine
 
-      # swf flash game decompiler
-      jpexs
+        # screenshot tool (Linux only - wayland dependency)
+      ]
+      ++ pkgs.lib.optionals isLinux [
+        flameshot
 
-      # rust command completion timer
-      hyperfine
+        # performance profiling (Linux only - wayland dependency)
+        tracy
+      ]
+      ++ [
+        # cloudflare localhost tunneling
+        cloudflared
 
-      # screenshot tool (Linux only - wayland dependency)
-      ] ++ pkgs.lib.optionals isLinux [
-      flameshot
+        # sdl cross-platform graphics
+        # SDL2
+        # sdl3
 
-      # performance profiling (Linux only - wayland dependency)
-      tracy
-      ] ++ [
+        # crypto wallets
 
-      # cloudflare localhost tunneling
-      cloudflared
+        # shamir cli
+        # inputs.shamir.packages.${pkgs.system}.default
 
-      # sdl cross-platform graphics
-      # SDL2
-      # sdl3
+        # schnorr cli
+        # inputs.schnorr.packages.${pkgs.system}.default
 
-      # crypto wallets
-
-      # shamir cli
-      # inputs.shamir.packages.${pkgs.system}.default
-
-      # schnorr cli
-      # inputs.schnorr.packages.${pkgs.system}.default
-
-      # flow terminal
-      # inputs.flow.packages.${pkgs.system}.default
-
-      ] ++ pkgs.lib.optionals (inputs ? msgvault) [
+        # flow terminal
+        # inputs.flow.packages.${pkgs.system}.default
+      ]
+      ++ pkgs.lib.optionals (inputs ? msgvault) [
         inputs.msgvault.packages.${pkgs.system}.default
-      ] ++ [
+      ]
+      ++ [
+        # rustmission
+        # inputs.rustmission.packages.${pkgs.system}.default
 
-      # rustmission
-      # inputs.rustmission.packages.${pkgs.system}.default
-
-      # signal terminal client
-      gurk-rs
-      ] ++ pkgs.lib.optionals isDarwin darwinPackages;
+        # signal terminal client
+        gurk-rs
+      ]
+      ++ pkgs.lib.optionals isDarwin darwinPackages;
     sessionVariables = {
       EDITOR = "nvim";
       TERMINAL = "${terminal}";

@@ -1,16 +1,13 @@
 {
   pkgs,
   inputs,
-  terminal,
   ...
-}:
-let
+}: let
   stable = import inputs.nixpkgs {
-    system = pkgs.system;
+    inherit (pkgs) system;
     config.allowBroken = true;
   };
-in
-{
+in {
   home = {
     packages = with pkgs; [
       # sprite editor tool

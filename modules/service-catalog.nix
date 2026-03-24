@@ -27,8 +27,7 @@
       frigate = {
         upstreamHost = "100.82.7.106";
         port = 8971;
-        scheme = "https";
-        tlsInsecureSkipVerify = true;
+        scheme = "http";
       };
     };
 
@@ -41,7 +40,6 @@
       radarr = {port = 7878;};
       radarr-mobile = {port = 7879;};
       bazarr = {port = 6767;};
-      port = {port = 9000;};
       retrom = {port = 5101;};
       stash = {port = 9999;};
       dozzle = {port = 9010;};

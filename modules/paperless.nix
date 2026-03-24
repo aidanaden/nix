@@ -8,7 +8,7 @@ in {
   # Scan/photograph documents, auto-categorize, full-text search
   virtualisation.oci-containers.containers.paperless = {
     image = "ghcr.io/paperless-ngx/paperless-ngx:2.14.7";
-    ports = ["8010:8000"];
+    ports = ["127.0.0.1:8010:8000"];
     volumes = [
       "/config/paperless:/usr/src/paperless/data"
       "/data/shared/paperless/media:/usr/src/paperless/media"

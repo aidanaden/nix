@@ -27,9 +27,7 @@ _: {
         22 # SSH
         139 # Samba
         445 # Samba
-        3000 # AdGuard Home web UI
         8096 # Jellyfin (direct access)
-        9000 # Portainer (direct access)
       ];
 
       # UDP ports

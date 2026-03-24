@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   home.file.aerospace = {
     target = ".aerospace.toml";
     text = ''
@@ -91,7 +90,7 @@
       if.app-name-regex-substring = 'qBittorrent'
       run = 'move-node-to-workspace 2'
 
-      # mpv 
+      # mpv
       [[on-window-detected]]
       if.app-name-regex-substring = 'mpv'
       run = 'move-node-to-workspace 2'

@@ -7,7 +7,6 @@
     PUID = "1001";
     PGID = "100";
     TZ = config.time.timeZone;
-    WEBUI_PORT = "8181";
   };
 
   mergerfsDeps = {
@@ -29,9 +28,9 @@
   };
 
   mkQbittorrentContainer = name: cfg: {
-    image = "lscr.io/linuxserver/qbittorrent:latest";
+    image = "lscr.io/linuxserver/qbittorrent:5.1.4-r2-ls446";
     ports = [
-      "${toString cfg.webPort}:8181"
+      "127.0.0.1:${toString cfg.webPort}:${toString cfg.webPort}"
       "${toString cfg.torrentPort}:6881"
       "${toString cfg.torrentPort}:6881/udp"
     ];
@@ -39,7 +38,11 @@
       "/config/${name}:/config"
       "/data/shared/media:/media"
     ];
-    environment = commonEnv;
+    environment =
+      commonEnv
+      // {
+        WEBUI_PORT = toString cfg.webPort;
+      };
     extraOptions = [
       "--name=${name}"
       "--memory=${cfg.memory}"

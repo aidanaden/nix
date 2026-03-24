@@ -37,8 +37,9 @@ in {
   services.sonarr = {
     enable = true;
     dataDir = "/config/sonarr";
-    openFirewall = true;
+    openFirewall = false;
     group = "users";
+    settings.server.bindaddress = "127.0.0.1";
   };
 
   # Wait for mergerfs
@@ -51,8 +52,8 @@ in {
   # Secondary instance (mobile/anime) as OCI container
   virtualisation.oci-containers.containers.sonarr-mobile = mkLinuxServerContainer {
     name = "sonarr-mobile";
-    image = "lscr.io/linuxserver/sonarr:latest";
-    ports = ["8990:8989"];
+    image = "lscr.io/linuxserver/sonarr:4.0.17.2952-ls305";
+    ports = ["127.0.0.1:8990:8989"];
     volumes = [
       "/config/sonarr-mobile:/config"
       "/data/shared/media/anime-mobile:/anime"

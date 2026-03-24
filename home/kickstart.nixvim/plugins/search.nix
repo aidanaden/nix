@@ -1,20 +1,17 @@
 {
   pkgs,
-  inputs ? { },
+  inputs ? {},
   ...
-}:
-let
+}: let
   fff-plugin =
-    if builtins.hasAttr "fff-nvim" inputs then
-      inputs.fff-nvim.packages.${pkgs.system}.fff-nvim
-    else
-      pkgs.vimPlugins.fff-nvim;
-in
-{
+    if builtins.hasAttr "fff-nvim" inputs
+    then inputs.fff-nvim.packages.${pkgs.system}.fff-nvim
+    else pkgs.vimPlugins.fff-nvim;
+in {
   programs.nixvim = {
     plugins.telescope.enable = true;
 
-    extraPlugins = [ fff-plugin ];
+    extraPlugins = [fff-plugin];
 
     extraConfigLua =
       ''

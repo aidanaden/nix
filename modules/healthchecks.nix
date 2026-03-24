@@ -8,7 +8,7 @@ in {
   # Monitors backup scripts, disk checks, and other scheduled tasks
   virtualisation.oci-containers.containers.healthchecks = {
     image = "healthchecks/healthchecks:v3.9";
-    ports = ["8011:8000"];
+    ports = ["127.0.0.1:8011:8000"];
     volumes = [
       "/config/healthchecks:/data"
     ];

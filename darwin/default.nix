@@ -4,9 +4,8 @@
   user,
   hostname,
   ...
-}:
-{
-  imports = [ ./homebrew.nix ];
+}: {
+  imports = [./homebrew.nix];
 
   users.users.${user} = {
     home = "/Users/${user}";
@@ -55,12 +54,16 @@
 
     gc = {
       automatic = true;
-      interval = { Weekday = 0; Hour = 3; Minute = 0; };
+      interval = {
+        Weekday = 0;
+        Hour = 3;
+        Minute = 0;
+      };
       options = "--delete-older-than 14d";
     };
 
     settings = {
-      allowed-users = [ user ];
+      allowed-users = [user];
       experimental-features = [
         "nix-command"
         "flakes"

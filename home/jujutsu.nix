@@ -1,8 +1,6 @@
-{ pkgs, pkgs-unstable, ... }:
-let
+{pkgs-unstable, ...}: let
   unstable = pkgs-unstable;
-in
-{
+in {
   programs.jujutsu = {
     enable = true;
     package = unstable.jujutsu;
@@ -141,8 +139,8 @@ in
       merge-tools = {
         beads-merge = {
           program = "bd";
-          merge-args = [ "merge" "$output" "$base" "$left" "$right" ];
-          merge-conflict-exit-codes = [ 1 ];
+          merge-args = ["merge" "$output" "$base" "$left" "$right"];
+          merge-conflict-exit-codes = [1];
         };
       };
     };

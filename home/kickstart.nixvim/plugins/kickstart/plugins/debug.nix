@@ -5,8 +5,8 @@
       lazyLoad = {
         enable = true;
         settings = {
-          cmd = [ "DapContinue" "DapToggleBreakpoint" ];
-          keys = [ "<F5>" "<F1>" "<F2>" "<F3>" "<F7>" "<leader>b" "<leader>B" ];
+          cmd = ["DapContinue" "DapToggleBreakpoint"];
+          keys = ["<F5>" "<F1>" "<F2>" "<F3>" "<F7>" "<leader>b" "<leader>B"];
         };
       };
     };

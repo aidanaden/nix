@@ -37,7 +37,7 @@
         #   format = ''
         #     require("lspkind").cmp_format({
         #       before = require("tailwind-tools.cmp").lspkind_format
-        #     })          
+        #     })
         #   '';
         # };
 
@@ -104,17 +104,17 @@
         sources = [
           # # Snippet Engine & its associated nvim-cmp source
           # # https://nix-community.github.io/nixvim/plugins/luasnip/index.html
-          { name = "luasnip"; }
+          {name = "luasnip";}
           # # Adds other completion capabilites.
           # #  nvim-cmp does not ship with all sources by default. They are split
           # #  into multiple repos for maintenance purposes.
           # # https://nix-community.github.io/nixvim/plugins/cmp-nvim-lsp.html
-          { name = "nvim_lsp"; }
+          {name = "nvim_lsp";}
           # # https://nix-community.github.io/nixvim/plugins/cmp-path.html
           # { name = "path"; }
-          { name = "tailwindcss"; }
+          {name = "tailwindcss";}
           # { name = "buffer"; }
-          { name = "npm"; }
+          {name = "npm";}
         ];
       };
     };

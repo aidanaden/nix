@@ -5,7 +5,6 @@
   virtualisation.oci-containers.containers.diun = {
     image = "crazymax/diun:4.28.0";
     volumes = [
-      "/var/run/docker.sock:/var/run/docker.sock:ro"
       "diun-data:/data"
     ];
     environment = {
@@ -15,6 +14,7 @@
       DIUN_WATCH_JITTER = "30s";
       # Monitor all Docker containers by default
       DIUN_PROVIDERS_DOCKER = "true";
+      DIUN_PROVIDERS_DOCKER_ENDPOINT = "tcp://docker-socket-proxy:2375";
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT = "true";
       # Telegram notifications
       DIUN_NOTIF_TELEGRAM = "true";
@@ -23,6 +23,20 @@
     environmentFiles = [
       config.sops.templates."diun-env".path
     ];
-    extraOptions = ["--name=diun"];
+    extraOptions = [
+      "--name=diun"
+      "--network=docker-control"
+    ];
+  };
+
+  systemd.services.docker-diun = {
+    after = [
+      "docker-control-network.service"
+      "docker-docker-socket-proxy.service"
+    ];
+    requires = [
+      "docker-control-network.service"
+      "docker-docker-socket-proxy.service"
+    ];
   };
 }

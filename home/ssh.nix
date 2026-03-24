@@ -1,9 +1,8 @@
-{ ... }:
-{
+_: {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    includes = [ "~/.orbstack/ssh/config" ];
+    includes = ["~/.orbstack/ssh/config"];
     matchBlocks = {
       "*" = {
         forwardAgent = false;

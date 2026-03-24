@@ -1,14 +1,10 @@
-{ pkgs, pkgs-unstable, ... }:
-let
-  unstable = pkgs-unstable;
-in
-{
+{pkgs, ...}: {
   programs.nixvim = {
-    extraPlugins = with pkgs.vimPlugins; [ tailwind-tools-nvim ];
+    extraPlugins = with pkgs.vimPlugins; [tailwind-tools-nvim];
     extraConfigLua = ''
       require("tailwind-tools").setup({
         -- your configuration
-      })  
+      })
     '';
   };
 }

@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   imports = [
     ./default.nix
     ./hyprland.nix

@@ -9,7 +9,7 @@ in {
 
   virtualisation.oci-containers.containers.stash = {
     image = "stashapp/stash:v0.30.1";
-    ports = ["9999:9999"];
+    ports = ["127.0.0.1:9999:9999"];
     volumes = [
       "/config/stash:/root/.stash"
       "/data/shared/media/ncdata/photos/sensitive-legalese:/data:ro"

@@ -1,8 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
     ./disko.nix
     ./hardware.nix
@@ -11,6 +7,7 @@
     ./users.nix
     ../../modules/secrets.nix
     ../../modules/docker.nix
+    ../../modules/docker-socket-proxy.nix
     ../../modules/samba.nix
     ../../modules/tailscale.nix
     ../../modules/rclone.nix
@@ -54,6 +51,7 @@
   # System
   system.stateVersion = "24.11";
   nixpkgs.config.allowUnfree = true;
+  hardware.enableRedistributableFirmware = true;
 
   # Nix settings (gc + auto-optimise-store in modules/maintenance.nix)
   nix.settings.experimental-features = ["nix-command" "flakes"];

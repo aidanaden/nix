@@ -1,8 +1,6 @@
-{ pkgs-unstable, ... }:
-let
+{pkgs-unstable, ...}: let
   unstable = pkgs-unstable;
-in
-{
+in {
   home.packages = [
     unstable.amp-cli
   ];

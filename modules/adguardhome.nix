@@ -2,13 +2,14 @@
   # AdGuard Home - DNS filtering and ad blocking
   services.adguardhome = {
     enable = true;
+    host = "127.0.0.1";
 
     # Allow UI-based changes to persist (password, clients, rewrites, etc.)
     # Initial settings below are applied on first boot only
     mutableSettings = true;
 
     # Open DNS ports
-    openFirewall = true;
+    openFirewall = false;
 
     settings = {
       # Web UI settings
@@ -157,4 +158,7 @@
     after = ["network-online.target"];
     wants = ["network-online.target"];
   };
+
+  networking.firewall.allowedTCPPorts = [53];
+  networking.firewall.allowedUDPPorts = [53];
 }

@@ -32,7 +32,7 @@ in {
 
     listenAddress = lib.mkOption {
       type = lib.types.str;
-      default = "0.0.0.0";
+      default = "127.0.0.1";
       description = "RetroM listen address for Docker port publishing.";
     };
 
@@ -46,7 +46,7 @@ in {
   config = {
     # RetroM - retro game library manager (no NixOS module exists)
     virtualisation.oci-containers.containers.retrom = {
-      image = "ghcr.io/jmberesford/retrom-service:latest";
+      image = "ghcr.io/jmberesford/retrom-service:v0.8.0@sha256:42c37204270aeead444ae3643f39b412bd156b43710f50a3dca37d2b952bbadf";
       ports = ["${cfg.listenAddress}:${toString cfg.port}:5101"];
       volumes = [
         "${cfg.libraryPath}:/app/library"

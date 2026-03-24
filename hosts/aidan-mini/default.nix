@@ -1,4 +1,8 @@
-{config, pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./disko.nix
     ./hardware.nix
@@ -129,6 +133,7 @@
     libraryPath = "/data/retro/shared/roms";
     configPath = "/var/lib/retro/config/retrom";
     dataPath = "/var/lib/retro/cache/retrom";
+    listenAddress = "0.0.0.0";
     waitFor = [];
   };
 

@@ -5,8 +5,8 @@
       lazyLoad = {
         enable = true;
         settings = {
-          cmd = [ "Neotree" ];
-          keys = [ "\\" ];
+          cmd = ["Neotree"];
+          keys = ["\\"];
         };
       };
 

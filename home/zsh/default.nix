@@ -3,8 +3,7 @@
   pkgs,
   pkgs-zsh-fzf-tab,
   ...
-}:
-{
+}: {
   programs.zsh = {
     enable = true;
     enableCompletion = false;

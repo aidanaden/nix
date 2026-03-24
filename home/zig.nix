@@ -1,4 +1,3 @@
-{ pkgs, ... }:
-{
-  home.packages = with pkgs; [ zig ];
+{pkgs, ...}: {
+  home.packages = with pkgs; [zig];
 }

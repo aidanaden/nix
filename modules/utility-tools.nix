@@ -3,10 +3,12 @@
   lib,
   ...
 }: let
+  mkLoopbackPort = port: "127.0.0.1:${port}";
+
   mkToolContainer = name: cfg:
     {
       inherit (cfg) image;
-      inherit (cfg) ports;
+      ports = map mkLoopbackPort cfg.ports;
       extraOptions =
         [
           "--name=${name}"
@@ -35,7 +37,7 @@
     };
 
     squoosh = {
-      image = "pnmcosta/squoosh:latest";
+      image = "dko0/squoosh:1.12.0";
       ports = ["4411:8080"];
       memory = "256m";
     };
@@ -57,8 +59,8 @@
     };
 
     reubah = {
-      image = "ghcr.io/joshuaepstein/reubah:latest";
-      ports = ["8088:8080"];
+      image = "ghcr.io/dendianugerah/reubah:latest@sha256:2db201bb197110681012b9721a6b92a502f3fc46f79e3f1d5cad1b6367dfcda1";
+      ports = ["8088:8081"];
       memory = "256m";
     };
 

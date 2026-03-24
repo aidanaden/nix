@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-let
+{pkgs, ...}: let
   pr-nvim = pkgs.vimUtils.buildVimPlugin {
     pname = "pr.nvim";
     version = "unstable-2026-02-09";
@@ -10,8 +9,7 @@ let
       hash = "sha256-rwllIyY2RG58RmIpIDCUhn4VeIp9ED18MPtPOpi0OF0=";
     };
   };
-in
-{
+in {
   programs.nixvim = {
     extraPlugins = [
       {
@@ -23,7 +21,7 @@ in
     plugins.lz-n.plugins = [
       {
         __unkeyed-1 = "pr.nvim";
-        cmd = [ "PR" ];
+        cmd = ["PR"];
         after = ''
           function()
             require("pr").setup()

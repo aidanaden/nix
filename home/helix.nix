@@ -28,7 +28,7 @@
     };
     languages = {
       language = let
-        prettier = lang: {
+        prettier = _lang: {
           command = lib.getExe pkgs.nodePackages.prettier;
           args = [
             "--stdin-filepath"

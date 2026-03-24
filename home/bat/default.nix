@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+_: {
   programs.bat = {
     enable = true;
     # themes = {

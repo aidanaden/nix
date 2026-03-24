@@ -6,7 +6,7 @@
 in {
   # Linkding - bookmark manager (no NixOS module exists)
   virtualisation.oci-containers.containers.linkding = {
-    image = "sissbruecker/linkding:latest-plus";
+    image = "sissbruecker/linkding:1.45.0-plus";
     ports = ["9697:9090"];
     volumes = [
       "/data/shared/bookmarks:/etc/linkding/data"

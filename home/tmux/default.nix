@@ -4,8 +4,7 @@
   pkgs-unstable,
   terminal,
   ...
-}:
-let
+}: let
   unstable = pkgs-unstable;
   sessionx = pkgs.tmuxPlugins.tmux-sessionx.overrideAttrs (old: {
     postPatch =
@@ -15,8 +14,7 @@ let
           --replace-fail "paths=\$(find \''${clean_paths//,/ } -mindepth 1 -maxdepth 1 -type d)" "paths=\"\''${clean_paths//,/ } \$(find \''${clean_paths//,/ } -mindepth 1 -maxdepth 1 -type d -not -name '.*')\""
       '';
   });
-in
-{
+in {
   programs.tmux = {
     enable = true;
     shortcut = "b";
@@ -25,7 +23,10 @@ in
     historyLimit = 10000;
     keyMode = "vi";
     shell = "${pkgs.zsh}/bin/zsh";
-    "terminal" = if terminal == "alacritty" then "alacritty" else "xterm-kitty";
+    "terminal" =
+      if terminal == "alacritty"
+      then "alacritty"
+      else "xterm-kitty";
 
     plugins = with pkgs; [
       {

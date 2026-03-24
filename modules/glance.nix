@@ -1,10 +1,11 @@
 {config, ...}: {
   services.glance = {
     enable = true;
-    openFirewall = true;
+    openFirewall = false;
 
     settings = {
       server = {
+        host = "127.0.0.1";
         port = 8080;
       };
 
@@ -75,10 +76,6 @@
                       title = "Management";
                       color = "249 226 175";
                       links = [
-                        {
-                          title = "Portainer";
-                          url = "https://port.aidanaden.com";
-                        }
                         {
                           title = "AdGuard Home";
                           url = "https://adguard.aidanaden.com";

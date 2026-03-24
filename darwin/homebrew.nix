@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   homebrew = {
     enable = true;
 
@@ -13,7 +12,6 @@
     taps = [
       "aidanaden/tools"
       "aidanaden/games"
-      "glinford/tap"
       "productdevbook/tap"
     ];
 
@@ -36,7 +34,6 @@
       "balenaetcher" # no nixpkgs package
       "focusrite-control-2" # no nixpkgs package
       "crystalfetch" # no nixpkgs package
-      "dns-easy-switcher" # no nixpkgs package
       "clop" # no nixpkgs package
       "cardinal-search" # no nixpkgs package
       "macfuse" # used for borg's mount feature to browse backups

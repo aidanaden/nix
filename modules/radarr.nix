@@ -37,8 +37,9 @@ in {
   services.radarr = {
     enable = true;
     dataDir = "/config/radarr";
-    openFirewall = true;
+    openFirewall = false;
     group = "users";
+    settings.server.bindaddress = "127.0.0.1";
   };
 
   # Wait for mergerfs
@@ -51,8 +52,8 @@ in {
   # Secondary instance (mobile) as OCI container
   virtualisation.oci-containers.containers.radarr-mobile = mkLinuxServerContainer {
     name = "radarr-mobile";
-    image = "lscr.io/linuxserver/radarr:latest";
-    ports = ["7879:7878"];
+    image = "lscr.io/linuxserver/radarr:6.0.4.10291-ls295";
+    ports = ["127.0.0.1:7879:7878"];
     volumes = [
       "/config/radarr-mobile:/config"
       "/data/shared/media/movies-mobile:/movies-mobile"

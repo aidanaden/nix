@@ -1,5 +1,8 @@
-{ pkgs, pkgs-unstable, ... }:
-let
+{
+  pkgs,
+  pkgs-unstable,
+  ...
+}: let
   unstable = pkgs-unstable;
   chromeCdp = pkgs.writeShellScriptBin "chrome-cdp" ''
     set -euo pipefail
@@ -18,8 +21,7 @@ let
       --user-data-dir="$profile_dir" \
       "$@"
   '';
-in
-{
+in {
   home.packages = [
     unstable.google-chrome
     chromeCdp

@@ -1,10 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-{
+_: {
   programs.waybar = {
     enable = true;
     systemd = {
@@ -162,7 +156,7 @@
       {
         "layer" = "top";
         "position" = "top";
-        modules-left = [ "hyprland/workspaces" ];
+        modules-left = ["hyprland/workspaces"];
         modules-right = [
           "network"
           "pulseaudio"
