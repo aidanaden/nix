@@ -130,10 +130,10 @@
     // lib.optionalAttrs (cfg.camera.host != null) {
       go2rtc.streams = {
         "${cfg.camera.name}_main" = [
-          "rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@${cfg.camera.host}:${toString cfg.camera.rtspPort}${cfg.camera.mainStreamPath}"
+          "ffmpeg:rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@${cfg.camera.host}:${toString cfg.camera.rtspPort}${cfg.camera.mainStreamPath}"
         ];
         "${cfg.camera.name}_sub" = [
-          "rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@${cfg.camera.host}:${toString cfg.camera.rtspPort}${cfg.camera.subStreamPath}"
+          "ffmpeg:rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@${cfg.camera.host}:${toString cfg.camera.rtspPort}${cfg.camera.subStreamPath}"
         ];
       };
     });
@@ -429,6 +429,42 @@ in {
       '';
     };
 
+    systemd.services.home-automation-docker-forwarding = {
+      description = "Allow the home automation Docker bridge to reach the LAN";
+      wantedBy = ["multi-user.target"];
+      after = [
+        "docker.service"
+        "firewall.service"
+        "home-automation-docker-network.service"
+      ];
+      requires = [
+        "docker.service"
+        "home-automation-docker-network.service"
+      ];
+      serviceConfig = {
+        RemainAfterExit = true;
+        Type = "oneshot";
+      };
+      script = ''
+        network_id="$(${pkgs.docker}/bin/docker network inspect ${cfg.network} --format '{{ .Id }}')"
+        bridge_name="br-$(printf '%s' "$network_id" | cut -c1-12)"
+
+        ${pkgs.iptables}/bin/iptables -C FORWARD -i "$bridge_name" -j ACCEPT 2>/dev/null || \
+          ${pkgs.iptables}/bin/iptables -I FORWARD 1 -i "$bridge_name" -j ACCEPT
+
+        ${pkgs.iptables}/bin/iptables -C FORWARD -o "$bridge_name" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
+          ${pkgs.iptables}/bin/iptables -I FORWARD 1 -o "$bridge_name" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      '';
+      preStop = ''
+        network_id="$(${pkgs.docker}/bin/docker network inspect ${cfg.network} --format '{{ .Id }}' 2>/dev/null || true)"
+        if [ -n "$network_id" ]; then
+          bridge_name="br-$(printf '%s' "$network_id" | cut -c1-12)"
+          ${pkgs.iptables}/bin/iptables -D FORWARD -i "$bridge_name" -j ACCEPT 2>/dev/null || true
+          ${pkgs.iptables}/bin/iptables -D FORWARD -o "$bridge_name" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+        fi
+      '';
+    };
+
     virtualisation.oci-containers.containers = {
       mqtt = {
         image = "eclipse-mosquitto:${cfg.mqtt.imageTag}";
@@ -503,18 +539,36 @@ in {
     };
 
     systemd.services.docker-mqtt = {
-      after = ["home-automation-docker-network.service"];
-      requires = ["home-automation-docker-network.service"];
+      after = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
+      requires = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
     };
 
     systemd.services.docker-homeassistant = {
-      after = ["home-automation-docker-network.service"];
-      requires = ["home-automation-docker-network.service"];
+      after = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
+      requires = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
     };
 
     systemd.services.docker-frigate = {
-      after = ["home-automation-docker-network.service"];
-      requires = ["home-automation-docker-network.service"];
+      after = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
+      requires = [
+        "home-automation-docker-network.service"
+        "home-automation-docker-forwarding.service"
+      ];
     };
 
     systemd.services.home-automation-tailscale-firewall = {
