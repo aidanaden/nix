@@ -6,6 +6,7 @@
 }: let
   cfg = config.homelab.homeAutomation;
   yaml = pkgs.formats.yaml {};
+  homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "        - ${proxy}\n") cfg.homeAssistant.trustedProxies;
 
   homeAssistantConfig = pkgs.writeText "home-assistant-configuration.yaml" ''
     default_config:
@@ -14,6 +15,10 @@
       name: Aidan Mini
       time_zone: ${config.time.timeZone}
 
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+${homeAssistantTrustedProxies}
     stream:
     ffmpeg:
     media_source:
@@ -244,6 +249,16 @@ in {
         type = lib.types.port;
         default = 8123;
         description = "Host port for Home Assistant.";
+      };
+
+      trustedProxies = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "172.18.0.1"
+          "100.92.143.10"
+          "192.168.0.69"
+        ];
+        description = "Reverse proxies allowed to forward requests to Home Assistant.";
       };
     };
 

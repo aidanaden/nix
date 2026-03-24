@@ -262,6 +262,21 @@ auth.aidanaden.com {
     handle @immichframe {
         reverse_proxy 100.92.143.10:3456
     }
+
+    # Home automation
+    @ha host ha.aidanaden.com
+    handle @ha {
+        reverse_proxy 100.82.7.106:8123
+    }
+
+    @frigate host frigate.aidanaden.com
+    handle @frigate {
+        reverse_proxy https://100.82.7.106:8971 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
     
     # Security
     @vault host vault.aidanaden.com
