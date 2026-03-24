@@ -106,7 +106,7 @@
     darwinOverlays = [
       zig.overlays.default
       (
-        final: prev: {
+        _final: prev: {
           nodejs = prev.nodejs_22;
           nodejs-slim = prev.nodejs-slim_22;
         }
@@ -161,6 +161,31 @@
       };
 
     treefmtEval = forAllSystems treefmtEvalFor;
+
+    rotateAmcrestRtspPasswordFor = system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      pythonTool =
+        pkgs.writers.writePython3Bin
+        "rotate-amcrest-rtsp-password"
+        {}
+        (builtins.readFile ./scripts/rotate-amcrest-rtsp-password.py);
+    in
+      pkgs.symlinkJoin {
+        name = "rotate-amcrest-rtsp-password";
+        paths = [pythonTool];
+        nativeBuildInputs = [pkgs.makeWrapper];
+        postBuild = ''
+          wrapProgram "$out/bin/rotate-amcrest-rtsp-password" \
+            --prefix PATH : ${
+            nixpkgs.lib.makeBinPath [
+              pkgs.jujutsu
+              pkgs.nix
+              pkgs.openssh
+              pkgs.sops
+            ]
+          }
+        '';
+      };
 
     darwinPkgs = import nixpkgs-darwin {
       system = darwinSystem;
@@ -243,6 +268,14 @@
 
     packages = forAllSystems (system: {
       colmena-cli = inputs.colmena.packages.${system}.colmena;
+      rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
+    });
+
+    apps = forAllSystems (system: {
+      rotate-amcrest-rtsp-password = {
+        type = "app";
+        program = "${self.packages.${system}.rotate-amcrest-rtsp-password}/bin/rotate-amcrest-rtsp-password";
+      };
     });
 
     nixosConfigurations = {
@@ -319,7 +352,7 @@
       ];
     };
 
-    colmenaHive = colmenaHive;
+    inherit colmenaHive;
     colmena = colmenaHive;
 
     devShells = forAllSystems (
@@ -327,15 +360,17 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in {
         default = pkgs.mkShell {
-          packages = with pkgs; [
-            age
-            pre-commit
-            sops
-            nixos-anywhere
-            treefmtEval.${system}.config.build.wrapper
-          ] ++ [
-            inputs.colmena.packages.${system}.colmena
-          ];
+          packages = with pkgs;
+            [
+              age
+              pre-commit
+              sops
+              nixos-anywhere
+              treefmtEval.${system}.config.build.wrapper
+            ]
+            ++ [
+              inputs.colmena.packages.${system}.colmena
+            ];
         };
       }
     );
