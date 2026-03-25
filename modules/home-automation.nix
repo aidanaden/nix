@@ -8,10 +8,6 @@
   yaml = pkgs.formats.yaml {};
   amcrestEntityBase = "${cfg.camera.name}_amcrest";
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
-  homeAssistantAdvancedCameraCard = pkgs.fetchzip {
-    url = "https://github.com/dermotduffy/advanced-camera-card/releases/download/v7.27.4/advanced-camera-card.zip";
-    hash = "sha256-lBdJBn/TLU3ezZnUJLt4eH87n1pOizS68RfLHYyRUq0=";
-  };
   homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
     lovelace:
       dashboards:
@@ -40,8 +36,8 @@
         name = "HQ";
         icon = "mdi:high-definition-box";
         tap_action = {
-          action = "navigate";
-          navigation_path = "/frigate-cameras/studio";
+          action = "url";
+          url_path = cfg.homeAssistant.frigateExternalUrl;
         };
       }
       {
@@ -49,24 +45,23 @@
         name = "Fast";
         icon = "mdi:speedometer";
         tap_action = {
-          action = "navigate";
-          navigation_path = "/frigate-cameras/studio-fast";
+          action = "url";
+          url_path = cfg.homeAssistant.frigateExternalUrl;
         };
       }
     ];
   };
 
-  homeAssistantLiveCard = stream: _title: {
-    type = "custom:frigate-card";
-    cameras = [
-      {
-        camera_entity = "camera.${cfg.camera.name}";
-        live_provider = "go2rtc";
-        go2rtc = {
-          inherit stream;
-        };
-      }
-    ];
+  homeAssistantLiveCard = title: {
+    type = "picture-entity";
+    entity = "camera.${cfg.camera.name}";
+    camera_view = "live";
+    fit_mode = "contain";
+    show_name = true;
+    name = title;
+    tap_action = {
+      action = "more-info";
+    };
   };
 
   homeAssistantAlertsCard = {
@@ -141,9 +136,9 @@
   homeAssistantHelpCard = {
     type = "markdown";
     content = ''
-      Use `HQ` for the higher-quality Frigate main stream and `Fast` for the lower-latency substream.
+      The Home Assistant camera card uses the stable higher-quality Frigate stream.
 
-      Open the Frigate sidebar item for recordings, review, and live stream switching.
+      Use the `HQ` and `Fast` buttons to open Frigate for live stream switching, recordings, and review.
 
       Use `Camera control` for fine nudges and `Camera control (long move)` for larger repositioning.
 
@@ -151,8 +146,8 @@
     '';
   };
 
-  homeAssistantStudioCards = stream: title: [
-    (homeAssistantLiveCard stream title)
+  homeAssistantStudioCards = title: [
+    (homeAssistantLiveCard title)
     homeAssistantStreamPickerCard
     homeAssistantAlertsCard
     (homeAssistantPtzGrid "Camera control" 0.2)
@@ -167,13 +162,7 @@
         title = "Studio";
         path = "studio";
         icon = "mdi:cctv";
-        cards = homeAssistantStudioCards "${cfg.camera.name}_main" "Studio HQ";
-      }
-      {
-        title = "Studio Fast";
-        path = "studio-fast";
-        subview = true;
-        cards = homeAssistantStudioCards "${cfg.camera.name}_sub" "Studio Fast";
+        cards = homeAssistantStudioCards "Studio";
       }
     ];
   };
@@ -256,10 +245,6 @@
       external_url: ${cfg.homeAssistant.externalUrl}
       internal_url: ${cfg.homeAssistant.internalUrl}
       packages: !include_dir_named packages
-
-    frontend:
-      extra_module_url:
-        - /local/community/advanced-camera-card/advanced-camera-card.js?v=7.27.4
 
     http:
       use_x_forwarded_for: true
@@ -885,10 +870,7 @@ in {
           ]
           ++ lib.optional
           (cfg.homeAssistant.amcrestPackageFile != null)
-          "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro"
-          ++ [
-            "${homeAssistantAdvancedCameraCard}:/config/www/community/advanced-camera-card:ro"
-          ];
+          "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro";
         environment = {
           TZ = config.time.timeZone;
         };

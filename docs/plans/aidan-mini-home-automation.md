@@ -38,9 +38,9 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
 3. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
    - `Frigate` panel link
-4. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively:
-   - `Studio` defaults to the higher-quality Frigate go2rtc `studio_main` stream
-   - `Fast` is available from the `Stream quality` buttons as a subview backed by `studio_sub`
+4. The `Cameras` dashboard now uses native HA cards for stability:
+   - `Studio` shows the higher-quality Frigate-backed HA camera entity
+   - `HQ` and `Fast` buttons open Frigate for stream switching and review
 5. The same dashboard also includes built-in Amcrest controls from the native HA integration:
    - `Privacy mode` switch
    - `Camera online` status
@@ -50,8 +50,9 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
 
 The repo now prewires a better HA mobile experience:
 
-- Home Assistant shows a `Cameras` dashboard that uses `advanced-camera-card` with `camera.studio`
-- The dashboard defaults to the higher-quality stream and also exposes a `Fast` subview for lower-latency mobile use
+- Home Assistant shows a stable native `Cameras` dashboard with `camera.studio`
+- The dashboard defaults to the higher-quality stream
+- `HQ` and `Fast` buttons open Frigate, which remains the place for live stream selection
 - The dashboard also exposes Amcrest privacy and PTZ controls directly in HA
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
 - Home Assistant now also exposes:
