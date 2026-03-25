@@ -57,7 +57,7 @@
   };
 
   homeAssistantLiveCard = stream: _title: {
-    type = "custom:advanced-camera-card";
+    type = "custom:frigate-card";
     cameras = [
       {
         camera_entity = "camera.${cfg.camera.name}";
