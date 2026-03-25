@@ -7,8 +7,15 @@
   cfg = config.homelab.homeAutomation;
   yaml = pkgs.formats.yaml {};
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
+  homeAssistantAdvancedCameraCard = pkgs.fetchzip {
+    url = "https://github.com/dermotduffy/advanced-camera-card/releases/download/v7.27.4/advanced-camera-card.zip";
+    hash = "sha256-lBdJBn/TLU3ezZnUJLt4eH87n1pOizS68RfLHYyRUq0=";
+  };
   homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
     lovelace:
+      resources:
+        - url: /local/community/advanced-camera-card/advanced-camera-card.js
+          type: module
       dashboards:
         frigate-cameras:
           mode: yaml
@@ -31,11 +38,24 @@
         path: studio
         icon: mdi:cctv
         cards:
-          - type: picture-entity
-            entity: camera.${cfg.camera.name}
-            name: ${cfg.camera.name}
-            camera_view: live
-            show_state: false
+          - type: custom:advanced-camera-card
+            cameras:
+              - camera_entity: camera.${cfg.camera.name}
+                engine: frigate
+                live_provider: go2rtc
+                frigate:
+                  camera_name: ${cfg.camera.name}
+                  url: ${cfg.homeAssistant.frigateExternalUrl}
+                go2rtc:
+                  stream: ${cfg.camera.name}_main
+                  modes:
+                    - webrtc
+                    - mse
+                    - mp4
+                dimensions:
+                  aspect_ratio: "16:9"
+                  layout:
+                    fit: contain
           - type: entities
             title: Alerts
             show_header_toggle: false
@@ -654,6 +674,7 @@ in {
           "${homeAssistantConfig}:/config/configuration.yaml:ro"
           "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
           "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
+          "${homeAssistantAdvancedCameraCard}:/config/www/community/advanced-camera-card:ro"
         ];
         environment = {
           TZ = config.time.timeZone;
