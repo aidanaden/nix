@@ -187,6 +187,28 @@
         '';
       };
 
+    syncHaFrigateFor = system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      pythonTool =
+        pkgs.writers.writePython3Bin
+        "sync-ha-frigate"
+        {}
+        (builtins.readFile ./scripts/sync-ha-frigate.py);
+    in
+      pkgs.symlinkJoin {
+        name = "sync-ha-frigate";
+        paths = [pythonTool];
+        nativeBuildInputs = [pkgs.makeWrapper];
+        postBuild = ''
+          wrapProgram "$out/bin/sync-ha-frigate" \
+            --prefix PATH : ${
+            nixpkgs.lib.makeBinPath [
+              pkgs.openssh
+            ]
+          }
+        '';
+      };
+
     darwinPkgs = import nixpkgs-darwin {
       system = darwinSystem;
       config = darwinNixpkgsConfig;
@@ -270,6 +292,7 @@
       colmena-cli = inputs.colmena.packages.${system}.colmena;
       rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
       rotate-camera-password = self.packages.${system}.rotate-amcrest-rtsp-password;
+      sync-ha-frigate = syncHaFrigateFor system;
     });
 
     apps = forAllSystems (system: {
@@ -278,6 +301,10 @@
         program = "${self.packages.${system}.rotate-amcrest-rtsp-password}/bin/rotate-amcrest-rtsp-password";
       };
       rotate-camera-password = self.apps.${system}.rotate-amcrest-rtsp-password;
+      sync-ha-frigate = {
+        type = "app";
+        program = "${self.packages.${system}.sync-ha-frigate}/bin/sync-ha-frigate";
+      };
     });
 
     nixosConfigurations = {

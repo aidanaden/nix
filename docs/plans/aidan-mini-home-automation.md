@@ -45,7 +45,7 @@ The stack will still build with `camera.host = null`, but Frigate will run in a 
    - MQTT host: `mqtt`
    - MQTT port: `1883`
    - Frigate URL: `http://frigate:5000`
-   - no RTSP URL template override is required because the HA container can already reach `frigate:8554`
+   - HA now prefers the higher-quality Frigate main restream via `rtsp://frigate:8554/{{ name }}_main`
 3. Install the custom Amcrest integration from:
    - `https://github.com/bcpearce/HomeAssistant-Amcrest-Custom`
 4. Add the Amcrest camera through the custom integration if you want direct Amcrest control entities in HA.
@@ -77,6 +77,22 @@ Frigate person alerts are now wired declaratively in Home Assistant, but they st
 4. Turn on `input_boolean.frigate_person_alerts` when you want person alerts armed
 
 The automation listens to `frigate/reviews` with `severity = alert`, so cat-only detections stay reviewable in Frigate but do not notify.
+
+## HA Frigate Sync Tool
+
+If the live Home Assistant Frigate config ever drifts, reapply the repo's expected HA integration settings with:
+
+```bash
+nix run '.#sync-ha-frigate' -- --deploy-host aidan-mini
+```
+
+This tool:
+
+- ensures the MQTT config entry exists
+- ensures the Frigate config entry exists
+- sets the Frigate `rtsp_url_template` to `rtsp://frigate:8554/{{ name }}_main`
+
+It assumes Home Assistant onboarding is already complete and the Frigate custom integration is already installed in HA.
 
 ## Camera setup checklist
 
