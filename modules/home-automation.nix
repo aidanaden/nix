@@ -278,7 +278,7 @@
 
     frontend:
       extra_module_url:
-        - /local/community/advanced-camera-card/advanced-camera-card.js
+        - /local/community/advanced-camera-card/advanced-camera-card.js?v=7.27.4
 
     http:
       use_x_forwarded_for: true

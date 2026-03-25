@@ -101,7 +101,6 @@
               - online
             sensors:
               - ptz_preset
-              - sdcard
             switches:
               - privacy_mode
       '';
