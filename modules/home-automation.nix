@@ -322,6 +322,36 @@
         };
         motion = {
           improve_contrast = true;
+          mask = [
+            "461,0,640,0,640,43,461,43"
+            "461,302,640,302,640,360,461,360"
+            "0,317,77,317,77,360,0,360"
+          ];
+        };
+        review.alerts.required_zones = ["entry"];
+        zones = {
+          entry = {
+            coordinates = "240,0,385,0,445,245,285,260,220,120";
+            objects = ["person"];
+            inertia = 3;
+          };
+          bed = {
+            coordinates = "58,205,474,202,621,359,13,359";
+            objects = ["cat"];
+            inertia = 2;
+          };
+        };
+        objects.filters = {
+          person = {
+            min_score = 0.6;
+            threshold = 0.72;
+            min_area = 1200;
+          };
+          cat = {
+            min_score = 0.5;
+            threshold = 0.68;
+            min_area = 300;
+          };
         };
       };
     };
@@ -351,6 +381,7 @@
 
       birdseye = {
         enabled = true;
+        mode = "objects";
       };
 
       detect = {
@@ -378,7 +409,10 @@
 
       review = {
         alerts.labels = ["person"];
-        detections.labels = ["cat"];
+        detections.labels = [
+          "person"
+          "cat"
+        ];
       };
 
       objects.track = [

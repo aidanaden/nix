@@ -38,9 +38,9 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
 3. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
    - `Frigate` panel link
-4. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively and offers two per-client live choices for the same camera:
-   - `Studio HQ` -> Frigate go2rtc `studio_main`
-   - `Studio Fast` -> Frigate go2rtc `studio_sub`
+4. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively:
+   - `Studio` defaults to the higher-quality Frigate go2rtc `studio_main` stream
+   - `Fast` is available from the `Stream quality` buttons as a subview backed by `studio_sub`
 5. The same dashboard also includes built-in Amcrest controls from the native HA integration:
    - `Privacy mode` switch
    - `Camera online` status
@@ -51,7 +51,7 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
 The repo now prewires a better HA mobile experience:
 
 - Home Assistant shows a `Cameras` dashboard that uses `advanced-camera-card` with `camera.studio`
-- The dashboard lets each client choose `Studio HQ` or `Studio Fast` instead of hardcoding one HA live stream
+- The dashboard defaults to the higher-quality stream and also exposes a `Fast` subview for lower-latency mobile use
 - The dashboard also exposes Amcrest privacy and PTZ controls directly in HA
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
 - Home Assistant now also exposes:
@@ -71,6 +71,24 @@ Frigate person alerts are now wired declaratively in Home Assistant, but they st
 4. Turn on `input_boolean.frigate_person_alerts` when you want person alerts armed
 
 The automation listens to `frigate/reviews` with `severity = alert`, so cat-only detections stay reviewable in Frigate but do not notify.
+
+## Frigate tuning defaults
+
+Frigate is now tuned conservatively for the current studio layout:
+
+- `person` alert reviews require the `entry` zone
+- `person` and `cat` both remain reviewable as detections outside that zone
+- `birdseye` is set to `objects`
+- motion masks exclude the timestamp and Amcrest overlays
+- a `bed` zone is scaffolded for later cat-specific automations
+
+Current goal:
+
+- person alerts should bias toward meaningful entry/walkway activity
+- cat movement should stay reviewable without creating push spam
+- static overlays should not waste motion processing
+
+These coordinates are tuned to the current camera angle. If you remount or significantly pan/tilt the camera, retune the Frigate masks and zones.
 
 ## HA Frigate Sync Tool
 
