@@ -37,7 +37,9 @@
         cards:
           - type: custom:advanced-camera-card
             cameras:
-              - camera_entity: camera.${cfg.camera.name}
+              - id: ${cfg.camera.name}-hq
+                title: Studio HQ
+                camera_entity: camera.${cfg.camera.name}
                 engine: frigate
                 live_provider: go2rtc
                 frigate:
@@ -45,6 +47,24 @@
                   url: ${cfg.homeAssistant.frigateExternalUrl}
                 go2rtc:
                   stream: ${cfg.camera.name}_main
+                  modes:
+                    - webrtc
+                    - mse
+                    - mp4
+                dimensions:
+                  aspect_ratio: "16:9"
+                  layout:
+                    fit: contain
+              - id: ${cfg.camera.name}-fast
+                title: Studio Fast
+                camera_entity: camera.${cfg.camera.name}
+                engine: frigate
+                live_provider: go2rtc
+                frigate:
+                  camera_name: ${cfg.camera.name}
+                  url: ${cfg.homeAssistant.frigateExternalUrl}
+                go2rtc:
+                  stream: ${cfg.camera.name}_sub
                   modes:
                     - webrtc
                     - mse
@@ -63,7 +83,9 @@
                 name: Mobile notify action
           - type: markdown
             content: |
-              Open the Frigate sidebar item for recordings, review, and live stream selection.
+              Use the camera menu to switch between `Studio HQ` and `Studio Fast` per client.
+
+              Open the Frigate sidebar item for recordings, review, and deeper live stream controls.
 
               Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
   '';

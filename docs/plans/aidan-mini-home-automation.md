@@ -52,14 +52,16 @@ The stack will still build with `camera.host = null`, but Frigate will run in a 
 5. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
    - `Frigate` panel link
-6. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively and points it at Frigate go2rtc stream `studio_main` for the highest-quality HA live view.
+6. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively and offers two per-client live choices for the same camera:
+   - `Studio HQ` -> Frigate go2rtc `studio_main`
+   - `Studio Fast` -> Frigate go2rtc `studio_sub`
 
 ## Mobile UX defaults
 
 The repo now prewires a better HA mobile experience:
 
 - Home Assistant shows a `Cameras` dashboard that uses `advanced-camera-card` with `camera.studio`
-- The dashboard live view prefers the Frigate `studio_main` go2rtc stream instead of the stock HA `picture-entity` camera card
+- The dashboard lets each client choose `Studio HQ` or `Studio Fast` instead of hardcoding one HA live stream
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
 - Home Assistant now also exposes:
   - `input_boolean.frigate_person_alerts`
