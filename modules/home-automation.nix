@@ -36,44 +36,11 @@
         path: studio
         icon: mdi:cctv
         cards:
-          - type: custom:advanced-camera-card
-            cameras:
-              - id: ${cfg.camera.name}-hq
-                title: Studio HQ
-                camera_entity: camera.${cfg.camera.name}
-                engine: frigate
-                live_provider: go2rtc
-                frigate:
-                  camera_name: ${cfg.camera.name}
-                  url: ${cfg.homeAssistant.frigateExternalUrl}
-                go2rtc:
-                  stream: ${cfg.camera.name}_main
-                  modes:
-                    - webrtc
-                    - mse
-                    - mp4
-                dimensions:
-                  aspect_ratio: "16:9"
-                  layout:
-                    fit: contain
-              - id: ${cfg.camera.name}-fast
-                title: Studio Fast
-                camera_entity: camera.${cfg.camera.name}
-                engine: frigate
-                live_provider: go2rtc
-                frigate:
-                  camera_name: ${cfg.camera.name}
-                  url: ${cfg.homeAssistant.frigateExternalUrl}
-                go2rtc:
-                  stream: ${cfg.camera.name}_sub
-                  modes:
-                    - webrtc
-                    - mse
-                    - mp4
-                dimensions:
-                  aspect_ratio: "16:9"
-                  layout:
-                    fit: contain
+          - type: picture-entity
+            entity: camera.${cfg.camera.name}
+            name: Studio
+            show_state: false
+            camera_view: live
           - type: entities
             title: Alerts
             show_header_toggle: false
@@ -95,9 +62,9 @@
                 icon: mdi:arrow-top-left
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: left_up
                     travel_time: 0.2
@@ -105,9 +72,9 @@
                 icon: mdi:arrow-up
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: up
                     travel_time: 0.2
@@ -115,9 +82,9 @@
                 icon: mdi:arrow-top-right
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: right_up
                     travel_time: 0.2
@@ -125,9 +92,9 @@
                 icon: mdi:arrow-left
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: left
                     travel_time: 0.2
@@ -135,16 +102,16 @@
                 icon: mdi:magnify-plus
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: zoom_in
                     travel_time: 0.2
                 hold_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: zoom_out
                     travel_time: 0.2
@@ -152,9 +119,9 @@
                 icon: mdi:arrow-right
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: right
                     travel_time: 0.2
@@ -162,9 +129,9 @@
                 icon: mdi:arrow-bottom-left
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: left_down
                     travel_time: 0.2
@@ -172,9 +139,9 @@
                 icon: mdi:arrow-down
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: down
                     travel_time: 0.2
@@ -182,19 +149,19 @@
                 icon: mdi:arrow-bottom-right
                 show_name: false
                 tap_action:
-                  action: perform-action
-                  perform_action: amcrest.ptz_control
-                  service_data:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
                     entity_id: camera.${amcrestEntityBase}
                     movement: right_down
                     travel_time: 0.2
-          - type: markdown
-            content: |
-              Use the camera menu to switch between `Studio HQ` and `Studio Fast` per client.
+      - type: markdown
+        content: |
+          Home Assistant uses the higher-quality Frigate main stream here.
 
-              Open the Frigate sidebar item for recordings, review, and deeper live stream controls.
+          Open the Frigate sidebar item for recordings, review, and live stream switching.
 
-              Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
+          Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
   '';
 
   homeAssistantNotificationsPackage = pkgs.writeText "frigate_notifications.yaml" ''
