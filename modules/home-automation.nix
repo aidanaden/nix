@@ -56,26 +56,17 @@
     ];
   };
 
-  homeAssistantLiveCard = stream: title: {
+  homeAssistantLiveCard = stream: _title: {
     type = "custom:advanced-camera-card";
     cameras = [
       {
         camera_entity = "camera.${cfg.camera.name}";
-        inherit title;
-        id = stream;
         live_provider = "go2rtc";
-        go2rtc.stream = stream;
+        go2rtc = {
+          inherit stream;
+        };
       }
     ];
-    view = {
-      default = "live";
-    };
-    live = {
-      auto_play = "all";
-      auto_pause = "never";
-      auto_mute = "all";
-      preload = true;
-    };
   };
 
   homeAssistantAlertsCard = {
