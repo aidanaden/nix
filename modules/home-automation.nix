@@ -13,9 +13,6 @@
   };
   homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
     lovelace:
-      resources:
-        - url: /local/community/advanced-camera-card/advanced-camera-card.js
-          type: module
       dashboards:
         frigate-cameras:
           mode: yaml
@@ -147,6 +144,10 @@
       name: Aidan Mini
       time_zone: ${config.time.timeZone}
       packages: !include_dir_named packages
+
+    frontend:
+      extra_module_url:
+        - /local/community/advanced-camera-card/advanced-camera-card.js
 
     http:
       use_x_forwarded_for: true
