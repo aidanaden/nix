@@ -497,6 +497,54 @@
         trap - EXIT
       done
   '';
+
+  amcrestNtpSyncScript = pkgs.writeShellScript "amcrest-ntp-sync" ''
+    set -euo pipefail
+
+    camera_host="${cfg.camera.host}"
+    credentials_file="${cfg.camera.credentialsFile}"
+
+    if [ -z "$camera_host" ]; then
+      echo "amcrest-ntp-sync: camera host is not configured" >&2
+      exit 1
+    fi
+
+    if [ ! -r "$credentials_file" ]; then
+      echo "amcrest-ntp-sync: credentials file is not readable: $credentials_file" >&2
+      exit 1
+    fi
+
+    ntp_server="$(${pkgs.iproute2}/bin/ip route get "$camera_host" | ${pkgs.gawk}/bin/awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit }}')"
+
+    if [ -z "$ntp_server" ]; then
+      echo "amcrest-ntp-sync: could not determine LAN source IP for $camera_host" >&2
+      exit 1
+    fi
+
+    . "$credentials_file"
+
+    if [ -z "''${FRIGATE_RTSP_USER:-}" ] || [ -z "''${FRIGATE_RTSP_PASSWORD:-}" ]; then
+      echo "amcrest-ntp-sync: camera credentials are incomplete" >&2
+      exit 1
+    fi
+
+    current_time="$(${pkgs.coreutils}/bin/date '+%Y-%-m-%-d %H:%M:%S')"
+    encoded_time="$(printf '%s' "$current_time" | ${pkgs.gnused}/bin/sed 's/ /%20/g')"
+
+    camera_get() {
+      ${pkgs.curl}/bin/curl \
+        --fail --silent --show-error --digest \
+        --user "$FRIGATE_RTSP_USER:$FRIGATE_RTSP_PASSWORD" \
+        "http://$camera_host/$1"
+    }
+
+    camera_get "cgi-bin/configManager.cgi?action=setConfig&NTP.Enable=true&NTP.Address=$ntp_server&NTP.Port=123&NTP.UpdatePeriod=10" >/dev/null
+    camera_get "cgi-bin/global.cgi?action=setCurrentTime&time=$encoded_time" >/dev/null
+
+    echo "Configured camera NTP against $ntp_server and set current time to $current_time."
+    camera_get "cgi-bin/configManager.cgi?action=getConfig&name=NTP" | ${pkgs.coreutils}/bin/head -n 6
+    camera_get "cgi-bin/global.cgi?action=getCurrentTime"
+  '';
 in {
   options.homelab.homeAutomation = {
     enable = lib.mkEnableOption "Home Assistant, Frigate, and MQTT on aidan-mini";
@@ -930,6 +978,38 @@ in {
         done
       '';
     };
+
+    systemd.services.amcrest-ntp-sync =
+      lib.mkIf
+      (
+        cfg.camera.host
+        != null
+        && cfg.camera.credentialsFile != null
+        && config.services.chrony.enable
+      ) {
+        description = "Configure Amcrest camera to use local NTP from aidan-mini";
+        wantedBy = ["multi-user.target"];
+        wants = [
+          "chronyd.service"
+          "network-online.target"
+        ];
+        after = [
+          "chronyd.service"
+          "network-online.target"
+        ];
+        unitConfig.ConditionPathExists = cfg.camera.credentialsFile;
+        path = [
+          pkgs.coreutils
+          pkgs.curl
+          pkgs.gawk
+          pkgs.gnused
+          pkgs.iproute2
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = amcrestNtpSyncScript;
+        };
+      };
 
     systemd.services.frigate-review-archive = lib.mkIf cfg.archive.enable {
       description = "Archive Frigate review clips to the NAS";

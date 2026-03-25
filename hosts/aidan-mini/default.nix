@@ -36,6 +36,16 @@
   };
 
   services.fstrim.enable = true;
+  services.chrony = {
+    enable = true;
+    servers = [
+      "time.cloudflare.com"
+      "time.google.com"
+    ];
+    extraConfig = ''
+      allow 192.168.1.0/24
+    '';
+  };
   time.timeZone = "Asia/Singapore";
   i18n.defaultLocale = "en_US.UTF-8";
 

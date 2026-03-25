@@ -100,6 +100,12 @@ On the Amcrest camera:
 - create a dedicated local user for Frigate
 - create a PTZ preset that visibly faces the wall or base for privacy mode
 
+The repo now also uses `aidan-mini` as the camera's LAN NTP server:
+
+- `chronyd` listens on UDP `123` on the LAN
+- `amcrest-ntp-sync.service` points the camera at `aidan-mini` and does an immediate `setCurrentTime`
+- rerun it manually with `sudo systemctl start amcrest-ntp-sync.service` if you ever need to force a resync
+
 ## Privacy and presence
 
 The repo now exposes the core Amcrest entities in HA directly. Privacy automation still needs to be created inside Home Assistant because the presence inputs come from:
