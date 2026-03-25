@@ -29,6 +29,12 @@
           icon: mdi:cctv
           show_in_sidebar: true
           filename: frigate-mobile-dashboard.yaml
+        security-dashboard:
+          mode: yaml
+          title: Security
+          icon: mdi:shield-home
+          show_in_sidebar: true
+          filename: security-dashboard.yaml
 
     panel_iframe:
       frigate:
@@ -179,6 +185,73 @@
     ];
   };
 
+  homeAssistantSecurityDashboard = yaml.generate "security-dashboard.yaml" {
+    title = "Security";
+    views = [
+      {
+        title = "Overview";
+        path = "overview";
+        icon = "mdi:shield-home";
+        cards = [
+          {
+            type = "alarm-panel";
+            entity = "alarm_control_panel.alarmo";
+            states = [
+              "armed_away"
+              "armed_home"
+              "triggered"
+            ];
+            name = "Alarmo";
+          }
+          {
+            type = "entities";
+            title = "Studio Status";
+            show_header_toggle = false;
+            entities = [
+              {
+                entity = "binary_sensor.studio_person_occupancy";
+                name = "Person detected";
+              }
+              {
+                entity = "binary_sensor.studio_cat_occupancy";
+                name = "Cat detected";
+              }
+              {
+                entity = "switch.${amcrestEntityBase}_privacy_mode";
+                name = "Privacy mode";
+              }
+              {
+                entity = "binary_sensor.${amcrestEntityBase}_online";
+                name = "Camera online";
+              }
+              {
+                entity = "input_boolean.frigate_person_alerts";
+                name = "Person alerts armed";
+              }
+            ];
+          }
+          {
+            type = "button";
+            name = "Open Frigate";
+            icon = "mdi:cctv";
+            tap_action = {
+              action = "url";
+              url_path = cfg.homeAssistant.frigateExternalUrl;
+            };
+          }
+          {
+            type = "markdown";
+            content = ''
+              Finish Alarmo setup from **Settings > Devices & Services** to customize users, codes, sensors, and arming behavior.
+
+              The default Alarmo area is created automatically once the Alarmo integration entry exists.
+            '';
+          }
+        ];
+      }
+    ];
+  };
+
   homeAssistantNotificationsPackage = pkgs.writeText "frigate_notifications.yaml" ''
     input_boolean:
       frigate_person_alerts:
@@ -277,6 +350,7 @@
 
     cp ${homeAssistantConfig} "$out/configuration.yaml"
     cp ${homeAssistantDashboard} "$out/frigate-mobile-dashboard.yaml"
+    cp ${homeAssistantSecurityDashboard} "$out/security-dashboard.yaml"
     cp ${homeAssistantNotificationsPackage} "$out/packages/frigate_notifications.yaml"
     touch "$out/automations.yaml" "$out/scripts.yaml" "$out/scenes.yaml"
     ${lib.optionalString (cfg.homeAssistant.amcrestPackageFile != null) ''
@@ -916,6 +990,7 @@ in {
             "${cfg.homeAssistant.configDir}:/config"
             "${homeAssistantConfig}:/config/configuration.yaml:ro"
             "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
+            "${homeAssistantSecurityDashboard}:/config/security-dashboard.yaml:ro"
             "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
           ]
           ++ lib.optional

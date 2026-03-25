@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 import sys
 import urllib.parse
 import urllib.request
@@ -137,6 +138,35 @@ def load_config_entry_from_storage(entry_id: str) -> dict[str, Any]:
     return entry
 
 
+def insert_alarmo_entry_in_storage() -> dict[str, Any]:
+    config_entries_path = Path("/config/.storage/core.config_entries")
+    config_entries = json.loads(config_entries_path.read_text())
+    now = __import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc
+    ).isoformat(timespec="microseconds")
+    entry = {
+        "created_at": now,
+        "data": {},
+        "disabled_by": None,
+        "discovery_keys": {},
+        "domain": "alarmo",
+        "entry_id": secrets.token_hex(13).upper(),
+        "minor_version": 1,
+        "modified_at": now,
+        "options": {},
+        "pref_disable_new_entities": False,
+        "pref_disable_polling": False,
+        "source": "user",
+        "subentries": [],
+        "title": "Alarmo",
+        "unique_id": secrets.token_hex(6),
+        "version": 1,
+    }
+    config_entries["data"]["entries"].append(entry)
+    config_entries_path.write_text(json.dumps(config_entries, separators=(",", ":")))
+    return entry
+
+
 def sync_frigate_options(
     base_url: str,
     token: str,
@@ -215,6 +245,7 @@ def main() -> int:
         default="rtsp://frigate:8554/{{ name }}_main",
     )
     parser.add_argument("--skip-mqtt", action="store_true")
+    parser.add_argument("--skip-alarmo", action="store_true")
     args = parser.parse_args()
 
     token = get_access_token(args.base_url, args.ha_user_name, args.client_id)
@@ -239,11 +270,15 @@ def main() -> int:
     frigate_entry = next(
         (entry for entry in entries if entry.get("domain") == "frigate"), None
     )
+    alarmo_entry = next(
+        (entry for entry in entries if entry.get("domain") == "alarmo"), None
+    )
 
     summary: dict[str, Any] = {
         "mqtt": None,
         "frigate": None,
         "frigate_options": None,
+        "alarmo": None,
     }
 
     if not args.skip_mqtt:
@@ -296,6 +331,39 @@ def main() -> int:
         summary["frigate"] = {
             "created": False,
             "entry_id": frigate_entry["entry_id"],
+        }
+
+    if args.skip_alarmo:
+        summary["alarmo"] = {
+            "skipped": True,
+        }
+    elif alarmo_entry is None:
+        if "alarmo" in handlers:
+            alarmo_entry = create_flow_entry(
+                args.base_url,
+                token,
+                "alarmo",
+                {},
+            )
+            summary["alarmo"] = {
+                "created": True,
+                "entry_id": alarmo_entry["entry_id"],
+                "method": "config_flow",
+                "requires_restart": False,
+            }
+        else:
+            alarmo_entry = insert_alarmo_entry_in_storage()
+            summary["alarmo"] = {
+                "created": True,
+                "entry_id": alarmo_entry["entry_id"],
+                "method": "storage_fallback",
+                "requires_restart": True,
+            }
+    else:
+        summary["alarmo"] = {
+            "created": False,
+            "entry_id": alarmo_entry["entry_id"],
+            "requires_restart": False,
         }
 
     summary["frigate_options"] = sync_frigate_options(
@@ -377,6 +445,8 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
         remote_command.extend(["--frigate-password", args.frigate_password])
     if args.skip_mqtt:
         remote_command.append("--skip-mqtt")
+    if args.skip_alarmo:
+        remote_command.append("--skip-alarmo")
     command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
     command.append(shlex.join(remote_command))
     return command
@@ -385,8 +455,8 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Sync Home Assistant's Frigate integration so HA uses "
-            "the high-quality Frigate main stream."
+            "Sync Home Assistant's MQTT, Frigate, and Alarmo integrations "
+            "so HA uses the high-quality Frigate main stream."
         )
     )
     parser.add_argument("--deploy-user", default="aidan")
@@ -408,6 +478,7 @@ def parse_args() -> argparse.Namespace:
         default="rtsp://frigate:8554/{{ name }}_main",
     )
     parser.add_argument("--skip-mqtt", action="store_true")
+    parser.add_argument("--skip-alarmo", action="store_true")
     parser.add_argument(
         "--ssh-option",
         action="append",
@@ -434,7 +505,20 @@ def main() -> int:
             print(exc.stderr.strip(), file=sys.stderr)
         raise SystemExit(exc.returncode) from exc
 
-    print(result.stdout.strip())
+    output = result.stdout.strip()
+    if not output:
+        fail("Sync script did not return JSON output.")
+    print(output)
+
+    try:
+        summary = json.loads(output)
+    except json.JSONDecodeError as exc:
+        fail(f"Sync script returned invalid JSON: {exc}")
+
+    if summary.get("alarmo", {}).get("requires_restart"):
+        restart_command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
+        restart_command.append("sudo systemctl restart docker-homeassistant.service")
+        run(restart_command)
     return 0
 
 

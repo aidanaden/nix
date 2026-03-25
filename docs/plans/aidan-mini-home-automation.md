@@ -37,6 +37,7 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
    - HA now prefers the higher-quality Frigate main restream via `rtsp://frigate:8554/{{ name }}_main`
 3. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
+   - `Security` YAML dashboard
    - `Frigate` panel link
 4. The `Cameras` dashboard now uses native HA cards for stability:
    - `Studio` shows the higher-quality Frigate-backed HA camera entity
@@ -50,8 +51,8 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
    - `Alarmo` backend
 7. In the HA UI, finish the app-level setup:
    - add the `HACS` integration and complete its GitHub/device auth flow
-   - add the `Alarmo` integration from `Settings > Devices & Services`
-   - use the native HA Alarm Panel card with the Alarmo entity after you create your alarm
+   - complete Alarmo customization from `Settings > Devices & Services`
+   - use the native HA Alarm Panel card on the `Security` dashboard after you customize your alarm
 
 ## Mobile UX defaults
 
@@ -60,6 +61,10 @@ The repo now prewires a better HA mobile experience:
 - Home Assistant shows a stable native `Cameras` dashboard with `camera.studio`
 - The dashboard defaults to the higher-quality stream
 - `HQ` and `Fast` buttons open Frigate, which remains the place for live stream selection
+- Home Assistant also shows a native `Security` dashboard with:
+  - the Alarmo panel
+  - occupancy and privacy status
+  - a Frigate shortcut
 - The dashboard also exposes Amcrest privacy and PTZ controls directly in HA
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
 - Home Assistant now also exposes:
@@ -110,6 +115,7 @@ This tool:
 
 - ensures the MQTT config entry exists
 - ensures the Frigate config entry exists
+- ensures the Alarmo config entry exists
 - sets the Frigate `rtsp_url_template` to `rtsp://frigate:8554/{{ name }}_main`
 
 It assumes Home Assistant onboarding is already complete and the Frigate custom integration is already installed in HA.
