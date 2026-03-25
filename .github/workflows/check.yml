@@ -1,0 +1,42 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  nix-and-home-assistant:
+    name: Nix And Home Assistant Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Run flake checks
+        run: nix flake check
+
+      - name: Evaluate aidan-mini system
+        run: nix eval --raw '.#nixosConfigurations.aidan-mini.config.system.build.toplevel.drvPath'
+
+      - name: Evaluate aidan-nas system
+        run: nix eval --raw '.#nixosConfigurations.aidan-nas.config.system.build.toplevel.drvPath'
+
+      - name: Build generated Home Assistant CI config
+        run: nix build '.#homeassistant-ci-aidan-mini'
+
+      - name: Copy generated Home Assistant CI config into workspace
+        run: |
+          rm -rf .ha-ci
+          cp -LR result .ha-ci
+
+      - name: Run Home Assistant configuration check
+        uses: frenck/action-home-assistant@v1.4.1
+        with:
+          path: ./.ha-ci
+          version: 2026.3.3

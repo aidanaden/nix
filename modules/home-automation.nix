@@ -8,6 +8,18 @@
   yaml = pkgs.formats.yaml {};
   amcrestEntityBase = "${cfg.camera.name}_amcrest";
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
+  homeAssistantHacsIntegration = pkgs.fetchFromGitHub {
+    owner = "hacs";
+    repo = "integration";
+    rev = "2.0.5";
+    hash = "sha256-xj+H75A6iwyGzMvYUjx61aGiH5DK/qYLC6clZ4cGDac=";
+  };
+  homeAssistantAlarmoIntegration = pkgs.fetchFromGitHub {
+    owner = "nielsfaber";
+    repo = "alarmo";
+    rev = "v1.10.16";
+    hash = "sha256-iPFDb9T14FF1ndYn+6bjG0fWjFjNlyHUQ0O192Dt0+c=";
+  };
   homeAssistantLovelaceConfig = lib.optionalString (cfg.camera.host != null) ''
     lovelace:
       dashboards:
@@ -258,6 +270,24 @@
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
+  '';
+
+  homeAssistantCiConfigDir = pkgs.runCommand "homeassistant-ci-config" {} ''
+    mkdir -p "$out/packages" "$out/custom_components"
+
+    cp ${homeAssistantConfig} "$out/configuration.yaml"
+    cp ${homeAssistantDashboard} "$out/frigate-mobile-dashboard.yaml"
+    cp ${homeAssistantNotificationsPackage} "$out/packages/frigate_notifications.yaml"
+    touch "$out/automations.yaml" "$out/scripts.yaml" "$out/scenes.yaml"
+    ${lib.optionalString (cfg.homeAssistant.amcrestPackageFile != null) ''
+      cp ${cfg.homeAssistant.amcrestPackageFile} "$out/packages/amcrest_controls.yaml"
+    ''}
+    ${lib.optionalString cfg.homeAssistant.enableHacsIntegration ''
+      cp -R ${homeAssistantHacsIntegration}/custom_components/hacs "$out/custom_components/hacs"
+    ''}
+    ${lib.optionalString cfg.homeAssistant.enableAlarmoIntegration ''
+      cp -R ${homeAssistantAlarmoIntegration}/custom_components/alarmo "$out/custom_components/alarmo"
+    ''}
   '';
 
   mosquittoConfig = pkgs.writeText "mosquitto.conf" ''
@@ -619,6 +649,24 @@ in {
         default = null;
         description = "Optional rendered Home Assistant package file for Amcrest camera control.";
       };
+
+      enableHacsIntegration = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to bundle the HACS custom integration declaratively.";
+      };
+
+      enableAlarmoIntegration = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to bundle the Alarmo custom integration declaratively.";
+      };
+
+      generated.ciConfigDir = lib.mkOption {
+        type = lib.types.path;
+        readOnly = true;
+        description = "Generated Home Assistant config directory used for CI validation.";
+      };
     };
 
     mqtt = {
@@ -769,6 +817,8 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    homelab.homeAutomation.homeAssistant.generated.ciConfigDir = homeAssistantCiConfigDir;
+
     assertions = [
       {
         assertion = cfg.homeAssistant.port != cfg.frigate.port;
@@ -870,7 +920,13 @@ in {
           ]
           ++ lib.optional
           (cfg.homeAssistant.amcrestPackageFile != null)
-          "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro";
+          "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro"
+          ++ lib.optionals cfg.homeAssistant.enableHacsIntegration [
+            "${homeAssistantHacsIntegration}/custom_components/hacs:/config/custom_components/hacs:ro"
+          ]
+          ++ lib.optionals cfg.homeAssistant.enableAlarmoIntegration [
+            "${homeAssistantAlarmoIntegration}/custom_components/alarmo:/config/custom_components/alarmo:ro"
+          ];
         environment = {
           TZ = config.time.timeZone;
         };

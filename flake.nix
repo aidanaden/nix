@@ -131,6 +131,9 @@
         modules = linuxModules hostPath;
       };
 
+    aidanMiniConfiguration = mkLinuxHost ./hosts/aidan-mini;
+    aidanNasConfiguration = mkLinuxHost ./hosts/aidan-nas;
+
     treefmtEvalFor = system: let
       pkgs = nixpkgs.legacyPackages.${system};
     in
@@ -288,12 +291,16 @@
       treefmt = treefmtEval.${system}.config.build.check self;
     });
 
-    packages = forAllSystems (system: {
-      colmena-cli = inputs.colmena.packages.${system}.colmena;
-      rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
-      rotate-camera-password = self.packages.${system}.rotate-amcrest-rtsp-password;
-      sync-ha-frigate = syncHaFrigateFor system;
-    });
+    packages = forAllSystems (system:
+      {
+        colmena-cli = inputs.colmena.packages.${system}.colmena;
+        rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
+        rotate-camera-password = self.packages.${system}.rotate-amcrest-rtsp-password;
+        sync-ha-frigate = syncHaFrigateFor system;
+      }
+      // nixpkgs.lib.optionalAttrs (system == linuxSystem) {
+        homeassistant-ci-aidan-mini = aidanMiniConfiguration.config.homelab.homeAutomation.homeAssistant.generated.ciConfigDir;
+      });
 
     apps = forAllSystems (system: {
       rotate-amcrest-rtsp-password = {
@@ -308,8 +315,8 @@
     });
 
     nixosConfigurations = {
-      aidan-nas = mkLinuxHost ./hosts/aidan-nas;
-      aidan-mini = mkLinuxHost ./hosts/aidan-mini;
+      aidan-nas = aidanNasConfiguration;
+      aidan-mini = aidanMiniConfiguration;
     };
 
     darwinConfigurations.${darwinHost} = darwin.lib.darwinSystem {

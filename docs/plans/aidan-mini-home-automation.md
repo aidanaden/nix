@@ -45,6 +45,13 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
    - `Privacy mode` switch
    - `Camera online` status
    - directional PTZ controls wired to `amcrest.ptz_control`
+6. The repo now bundles these HA custom integrations declaratively:
+   - `HACS` backend
+   - `Alarmo` backend
+7. In the HA UI, finish the app-level setup:
+   - add the `HACS` integration and complete its GitHub/device auth flow
+   - add the `Alarmo` integration from `Settings > Devices & Services`
+   - use the native HA Alarm Panel card with the Alarmo entity after you create your alarm
 
 ## Mobile UX defaults
 
@@ -124,6 +131,16 @@ The repo now also uses `aidan-mini` as the camera's LAN NTP server:
 - `chronyd` listens on UDP `123` on the LAN
 - `amcrest-ntp-sync.service` points the camera at `aidan-mini` and does an immediate `setCurrentTime`
 - rerun it manually with `sudo systemctl start amcrest-ntp-sync.service` if you ever need to force a resync
+
+## CI validation
+
+The repo now exposes a generated Home Assistant config directory for CI:
+
+```bash
+nix build .#homeassistant-ci-aidan-mini
+```
+
+This output mirrors the declarative HA config, packages, and bundled custom integrations closely enough for `frenck/action-home-assistant` to run a config check in GitHub Actions.
 
 ## Privacy and presence
 
