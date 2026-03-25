@@ -76,6 +76,26 @@
         FRIGATE_RTSP_PASSWORD=${config.sops.placeholder.amcrest_rtsp_password}
       '';
     };
+
+    templates."homeassistant-amcrest-controls.yaml" = {
+      mode = "0400";
+      content = ''
+        amcrest:
+          - host: ${config.homelab.homeAutomation.camera.host}
+            username: ${config.sops.placeholder.amcrest_rtsp_user}
+            password: ${config.sops.placeholder.amcrest_rtsp_password}
+            name: Studio Amcrest
+            port: 80
+            stream_source: snapshot
+            binary_sensors:
+              - online
+            sensors:
+              - ptz_preset
+              - sdcard
+            switches:
+              - privacy_mode
+      '';
+    };
   };
 
   services.tailscale.useRoutingFeatures = "client";
@@ -87,9 +107,11 @@
   homelab.homeAutomation = {
     enable = true;
 
+    homeAssistant.amcrestPackageFile = config.sops.templates."homeassistant-amcrest-controls.yaml".path;
+
     camera = {
       name = "studio";
-      host = "192.168.1.5";
+      host = "192.168.1.6";
       credentialsFile = config.sops.templates."amcrest-env".path;
     };
 

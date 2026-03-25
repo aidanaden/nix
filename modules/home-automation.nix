@@ -6,6 +6,7 @@
 }: let
   cfg = config.homelab.homeAutomation;
   yaml = pkgs.formats.yaml {};
+  amcrestEntityBase = "${cfg.camera.name}_amcrest";
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
   homeAssistantAdvancedCameraCard = pkgs.fetchzip {
     url = "https://github.com/dermotduffy/advanced-camera-card/releases/download/v7.27.4/advanced-camera-card.zip";
@@ -81,6 +82,112 @@
                 name: Person alerts armed
               - entity: input_text.frigate_notify_action
                 name: Mobile notify action
+              - entity: switch.${amcrestEntityBase}_privacy_mode
+                name: Privacy mode
+              - entity: binary_sensor.${amcrestEntityBase}_online
+                name: Camera online
+          - type: grid
+            title: Camera control
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                icon: mdi:arrow-top-left
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left_up
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-up
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: up
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-top-right
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right_up
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-left
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:magnify-plus
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: zoom_in
+                    travel_time: 0.2
+                hold_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: zoom_out
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-right
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-bottom-left
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left_down
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-down
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: down
+                    travel_time: 0.2
+              - type: button
+                icon: mdi:arrow-bottom-right
+                show_name: false
+                tap_action:
+                  action: perform-action
+                  perform_action: amcrest.ptz_control
+                  service_data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right_down
+                    travel_time: 0.2
           - type: markdown
             content: |
               Use the camera menu to switch between `Studio HQ` and `Studio Fast` per client.
@@ -450,6 +557,12 @@ in {
         default = false;
         description = "Whether Frigate person alerts start armed in Home Assistant.";
       };
+
+      amcrestPackageFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Optional rendered Home Assistant package file for Amcrest camera control.";
+      };
     };
 
     mqtt = {
@@ -692,13 +805,19 @@ in {
         image = "ghcr.io/home-assistant/home-assistant:${cfg.homeAssistant.imageTag}";
         ports = ["${toString cfg.homeAssistant.port}:8123"];
         dependsOn = ["mqtt"];
-        volumes = [
-          "${cfg.homeAssistant.configDir}:/config"
-          "${homeAssistantConfig}:/config/configuration.yaml:ro"
-          "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
-          "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
-          "${homeAssistantAdvancedCameraCard}:/config/www/community/advanced-camera-card:ro"
-        ];
+        volumes =
+          [
+            "${cfg.homeAssistant.configDir}:/config"
+            "${homeAssistantConfig}:/config/configuration.yaml:ro"
+            "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
+            "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
+          ]
+          ++ lib.optional
+          (cfg.homeAssistant.amcrestPackageFile != null)
+          "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro"
+          ++ [
+            "${homeAssistantAdvancedCameraCard}:/config/www/community/advanced-camera-card:ro"
+          ];
         environment = {
           TZ = config.time.timeZone;
         };

@@ -11,17 +11,6 @@
 
 ## Required local files before deployment
 
-Create the Amcrest credentials file on `aidan-mini`:
-
-```bash
-sudo install -d -m 0700 /var/lib/home-automation/secrets
-sudo tee /var/lib/home-automation/secrets/amcrest.env >/dev/null <<'EOF'
-FRIGATE_RTSP_USER=homeassistant
-FRIGATE_RTSP_PASSWORD=replace-me
-EOF
-sudo chmod 0600 /var/lib/home-automation/secrets/amcrest.env
-```
-
 Create an SSH key for NAS archive sync and authorize it on `aidan-nas`:
 
 ```bash
@@ -34,9 +23,9 @@ Append that public key to `~/.ssh/authorized_keys` for `aidan` on `aidan-nas`.
 
 ## Required repo edits before deployment
 
-Fill in the camera IP in [hosts/aidan-mini/default.nix](/Users/aidan/projects/nixos-machines/hosts/aidan-mini/default.nix) once the Archer NX200 has reserved it.
+Camera credentials now come from `sops`, not a host-local env file. Update the encrypted values in [secrets/secrets.yaml](/Users/aidan/projects/nixos-machines/secrets/secrets.yaml) when the camera password changes, then redeploy `aidan-mini`.
 
-The stack will still build with `camera.host = null`, but Frigate will run in a placeholder state until the camera address is set.
+Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/projects/nixos-machines/hosts/aidan-mini/default.nix) aligned with the Archer NX200 lease. The current Wi‑Fi lease is `192.168.1.6`.
 
 ## Home Assistant post-deploy steps
 
@@ -46,15 +35,16 @@ The stack will still build with `camera.host = null`, but Frigate will run in a 
    - MQTT port: `1883`
    - Frigate URL: `http://frigate:5000`
    - HA now prefers the higher-quality Frigate main restream via `rtsp://frigate:8554/{{ name }}_main`
-3. Install the custom Amcrest integration from:
-   - `https://github.com/bcpearce/HomeAssistant-Amcrest-Custom`
-4. Add the Amcrest camera through the custom integration if you want direct Amcrest control entities in HA.
-5. Confirm the HA sidebar items:
+3. Confirm the HA sidebar items:
    - `Cameras` YAML dashboard
    - `Frigate` panel link
-6. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively and offers two per-client live choices for the same camera:
+4. The `Cameras` dashboard now bundles `advanced-camera-card` declaratively and offers two per-client live choices for the same camera:
    - `Studio HQ` -> Frigate go2rtc `studio_main`
    - `Studio Fast` -> Frigate go2rtc `studio_sub`
+5. The same dashboard also includes built-in Amcrest controls from the native HA integration:
+   - `Privacy mode` switch
+   - `Camera online` status
+   - directional PTZ controls wired to `amcrest.ptz_control`
 
 ## Mobile UX defaults
 
@@ -62,6 +52,7 @@ The repo now prewires a better HA mobile experience:
 
 - Home Assistant shows a `Cameras` dashboard that uses `advanced-camera-card` with `camera.studio`
 - The dashboard lets each client choose `Studio HQ` or `Studio Fast` instead of hardcoding one HA live stream
+- The dashboard also exposes Amcrest privacy and PTZ controls directly in HA
 - Home Assistant also shows a `Frigate` sidebar panel that opens `https://frigate.aidanaden.com`
 - Home Assistant now also exposes:
   - `input_boolean.frigate_person_alerts`
@@ -111,10 +102,10 @@ On the Amcrest camera:
 
 ## Privacy and presence
 
-The repo sets up the infrastructure only. The privacy automation still needs to be created inside Home Assistant because the final entity IDs come from:
+The repo now exposes the core Amcrest entities in HA directly. Privacy automation still needs to be created inside Home Assistant because the presence inputs come from:
 
 - the iPhone Home Assistant companion app
-- the custom Amcrest integration
+- the built-in Amcrest integration
 - the Wi-Fi SSID sensor exposed by the companion app
 
 Recommended HA automation behavior:
