@@ -29,30 +29,46 @@
         url: ${cfg.homeAssistant.frigateExternalUrl}
   '';
 
-  homeAssistantLiveCard = {
+  homeAssistantStreamPickerCard = {
+    type = "grid";
+    title = "Stream quality";
+    columns = 2;
+    square = false;
+    cards = [
+      {
+        type = "button";
+        name = "HQ";
+        icon = "mdi:high-definition-box";
+        tap_action = {
+          action = "navigate";
+          navigation_path = "/frigate-cameras/studio";
+        };
+      }
+      {
+        type = "button";
+        name = "Fast";
+        icon = "mdi:speedometer";
+        tap_action = {
+          action = "navigate";
+          navigation_path = "/frigate-cameras/studio-fast";
+        };
+      }
+    ];
+  };
+
+  homeAssistantLiveCard = stream: title: {
     type = "custom:advanced-camera-card";
     cameras = [
       {
         camera_entity = "camera.${cfg.camera.name}";
-        title = "Studio HQ";
-        id = "${cfg.camera.name}_hq";
+        inherit title;
+        id = stream;
         live_provider = "go2rtc";
-        go2rtc.stream = "${cfg.camera.name}_main";
-      }
-      {
-        camera_entity = "camera.${cfg.camera.name}";
-        title = "Studio Fast";
-        id = "${cfg.camera.name}_fast";
-        live_provider = "go2rtc";
-        go2rtc.stream = "${cfg.camera.name}_sub";
+        go2rtc.stream = stream;
       }
     ];
-    menu = {
-      buttons.cameras.enabled = true;
-    };
     view = {
       default = "live";
-      camera_select = "live";
     };
     live = {
       auto_play = "all";
@@ -134,7 +150,7 @@
   homeAssistantHelpCard = {
     type = "markdown";
     content = ''
-      Use the camera selector in the live card to switch between `Studio HQ` and `Studio Fast`.
+      Use `HQ` for the higher-quality Frigate main stream and `Fast` for the lower-latency substream.
 
       Open the Frigate sidebar item for recordings, review, and live stream switching.
 
@@ -144,8 +160,9 @@
     '';
   };
 
-  homeAssistantStudioCards = [
-    homeAssistantLiveCard
+  homeAssistantStudioCards = stream: title: [
+    (homeAssistantLiveCard stream title)
+    homeAssistantStreamPickerCard
     homeAssistantAlertsCard
     (homeAssistantPtzGrid "Camera control" 0.2)
     (homeAssistantPtzGrid "Camera control (long move)" 1.0)
@@ -159,7 +176,13 @@
         title = "Studio";
         path = "studio";
         icon = "mdi:cctv";
-        cards = homeAssistantStudioCards;
+        cards = homeAssistantStudioCards "${cfg.camera.name}_main" "Studio HQ";
+      }
+      {
+        title = "Studio Fast";
+        path = "studio-fast";
+        subview = true;
+        cards = homeAssistantStudioCards "${cfg.camera.name}_sub" "Studio Fast";
       }
     ];
   };
