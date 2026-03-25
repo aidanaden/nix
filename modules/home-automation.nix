@@ -272,6 +272,8 @@
     homeassistant:
       name: Aidan Mini
       time_zone: ${config.time.timeZone}
+      external_url: ${cfg.homeAssistant.externalUrl}
+      internal_url: ${cfg.homeAssistant.internalUrl}
       packages: !include_dir_named packages
 
     frontend:
@@ -538,6 +540,12 @@ in {
         type = lib.types.str;
         default = "https://ha.aidanaden.com";
         description = "User-facing Home Assistant URL used in Frigate mobile notifications.";
+      };
+
+      internalUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "https://ha.aidanaden.com";
+        description = "User-facing Home Assistant URL used by clients on trusted networks when no split URL is needed.";
       };
 
       frigateExternalUrl = lib.mkOption {
