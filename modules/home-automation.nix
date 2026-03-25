@@ -155,11 +155,115 @@
                     entity_id: camera.${amcrestEntityBase}
                     movement: right_down
                     travel_time: 0.2
+          - type: grid
+            title: Camera control (long move)
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                icon: mdi:arrow-top-left
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left_up
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-up
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: up
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-top-right
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right_up
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-left
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:magnify-plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: zoom_in
+                    travel_time: 1.0
+                hold_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: zoom_out
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-right
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-bottom-left
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: left_down
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-down
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: down
+                    travel_time: 1.0
+              - type: button
+                icon: mdi:arrow-bottom-right
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: amcrest.ptz_control
+                  data:
+                    entity_id: camera.${amcrestEntityBase}
+                    movement: right_down
+                    travel_time: 1.0
       - type: markdown
         content: |
           Home Assistant uses the higher-quality Frigate main stream here.
 
           Open the Frigate sidebar item for recordings, review, and live stream switching.
+
+          Use `Camera control` for fine nudges and `Camera control (long move)` for larger repositioning.
 
           Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
   '';
