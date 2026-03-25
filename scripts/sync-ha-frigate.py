@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import shutil
 import subprocess
 import sys
@@ -119,13 +120,31 @@ def create_flow_entry(
     return result["result"]
 
 
+def load_config_entry_from_storage(entry_id: str) -> dict[str, Any]:
+    config_entries = json.loads(
+        Path("/config/.storage/core.config_entries").read_text()
+    )
+    entry = next(
+        (
+            item
+            for item in config_entries["data"]["entries"]
+            if item.get("entry_id") == entry_id
+        ),
+        None,
+    )
+    if entry is None:
+        fail(f"Could not find config entry {entry_id!r} in Home Assistant storage.")
+    return entry
+
+
 def sync_frigate_options(
     base_url: str,
     token: str,
     frigate_entry: dict[str, Any],
     rtsp_url_template: str,
 ) -> dict[str, Any]:
-    current_options = dict(frigate_entry.get("options", {}))
+    storage_entry = load_config_entry_from_storage(frigate_entry["entry_id"])
+    current_options = dict(storage_entry.get("options", {}))
     desired_options = {
         "enable_webrtc": current_options.get("enable_webrtc", False),
         "rtsp_url_template": rtsp_url_template,
@@ -329,38 +348,37 @@ def ssh_prefix(user: str, host: str, ssh_options: list[str]) -> list[str]:
 
 
 def build_remote_command(args: argparse.Namespace) -> list[str]:
-    command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
-    command.extend(
-        [
-            "sudo",
-            "docker",
-            "exec",
-            "-i",
-            args.homeassistant_container_name,
-            "python",
-            "-",
-            "--ha-user-name",
-            args.ha_user_name,
-            "--client-id",
-            args.client_id,
-            "--mqtt-broker",
-            args.mqtt_broker,
-            "--mqtt-port",
-            str(args.mqtt_port),
-            "--frigate-url",
-            args.frigate_url,
-            "--rtsp-url-template",
-            args.rtsp_url_template,
-        ]
-    )
+    remote_command = [
+        "sudo",
+        "docker",
+        "exec",
+        "-i",
+        args.homeassistant_container_name,
+        "python",
+        "-",
+        "--ha-user-name",
+        args.ha_user_name,
+        "--client-id",
+        args.client_id,
+        "--mqtt-broker",
+        args.mqtt_broker,
+        "--mqtt-port",
+        str(args.mqtt_port),
+        "--frigate-url",
+        args.frigate_url,
+        "--rtsp-url-template",
+        args.rtsp_url_template,
+    ]
     if args.frigate_validate_ssl:
-        command.append("--frigate-validate-ssl")
+        remote_command.append("--frigate-validate-ssl")
     if args.frigate_username:
-        command.extend(["--frigate-username", args.frigate_username])
+        remote_command.extend(["--frigate-username", args.frigate_username])
     if args.frigate_password:
-        command.extend(["--frigate-password", args.frigate_password])
+        remote_command.extend(["--frigate-password", args.frigate_password])
     if args.skip_mqtt:
-        command.append("--skip-mqtt")
+        remote_command.append("--skip-mqtt")
+    command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
+    command.append(shlex.join(remote_command))
     return command
 
 
