@@ -77,15 +77,10 @@ The repo now prewires a better HA mobile experience:
 - Home Assistant now also exposes:
   - `input_boolean.frigate_person_alerts`
   - `input_text.frigate_notify_action`
-  - `input_text.home_wifi_ssid`
 - the default notifier is now `notify.mobile_app_youphone`
 - `Alarmo` now turns `Person alerts` on automatically in `armed_away` and off again when disarmed or switched to `armed_home`
 - `Alarmo` also turns Amcrest `privacy_mode` off when entering `armed_away`
-- Home Assistant now also has a helper-driven privacy policy:
-  - if `person.aidan` is `home`
-  - and `sensor.youphone_ssid` matches `input_text.home_wifi_ssid`
-  - for 5 minutes while Alarmo is `disarmed`
-  - then Amcrest `privacy_mode` turns on automatically
+- Camera privacy remains a manual control while you are home
 - If HA thinks you are away for 5 minutes while the camera is still private, it now turns privacy off, arms Alarmo to `armed_away`, and sends a push notification through the configured notifier
 - The HA app should be your primary mobile surface, while the Frigate panel is the deeper review UI
 
@@ -96,8 +91,7 @@ Frigate person alerts are wired declaratively in Home Assistant and now default 
 1. Install the Home Assistant mobile app and sign into `https://ha.aidanaden.com`
 2. Allow notifications on the phone
 3. Verify `input_text.frigate_notify_action` still shows `notify.mobile_app_youphone`
-4. Set `input_text.home_wifi_ssid` to your apartment Wi-Fi SSID to enable automatic privacy mode at home
-5. `Alarmo` will arm and disarm `input_boolean.frigate_person_alerts` automatically for the common away/home flows
+4. `Alarmo` will arm and disarm `input_boolean.frigate_person_alerts` automatically for the common away/home flows
 
 The automation listens to `frigate/reviews` with `severity = alert`, so cat-only detections stay reviewable in Frigate but do not notify.
 
@@ -174,15 +168,10 @@ This output mirrors the declarative HA config, packages, and bundled custom inte
 
 ## Privacy and presence
 
-The repo now exposes the core Amcrest entities in HA directly. Privacy automation still needs to be created inside Home Assistant because the presence inputs come from:
+The repo now exposes the core Amcrest entities in HA directly. Privacy mode is intentionally manual while you are home.
 
-- the iPhone Home Assistant companion app
-- the built-in Amcrest integration
-- the Wi-Fi SSID sensor exposed by the companion app
+The repo still enforces the away-side fail-safe behavior:
 
-The repo now implements the core privacy automation behavior:
-
-- enter privacy only after `person.aidan` is home and the iPhone Wi-Fi SSID matches `input_text.home_wifi_ssid` for 5 minutes
 - exit privacy when `person.aidan` leaves home
 - if Home Assistant thinks you are away but the camera remains private for 5 minutes, auto-arm and alert
 
