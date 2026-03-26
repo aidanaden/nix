@@ -918,7 +918,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     parser = build_parser()
-    args = parser.parse_args()
+    argv = sys.argv[1:] or ["store-vaultwarden"]
+    args = parser.parse_args(argv)
     return args.func(args)
 
 

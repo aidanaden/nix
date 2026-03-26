@@ -58,7 +58,7 @@ The tool uses a temporary isolated `bw` profile, so it does not disturb any exis
 With those Keychain entries in place, the default command is:
 
 ```bash
-nix run '.#escrow-sops-age-key' -- store-vaultwarden
+nix run '.#escrow-sops-age-key'
 ```
 
 That will prompt for:
