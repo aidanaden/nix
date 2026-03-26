@@ -212,6 +212,19 @@
         '';
       };
 
+    escrowSopsAgeKeyFor = system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      pythonEnv = pkgs.python3.withPackages (ps: [ps.cryptography]);
+      script = pkgs.writeText "escrow-sops-age-key.py" (builtins.readFile ./scripts/escrow-sops-age-key.py);
+    in
+      pkgs.writeShellApplication {
+        name = "escrow-sops-age-key";
+        runtimeInputs = [pythonEnv];
+        text = ''
+          exec ${pythonEnv}/bin/python ${script} "$@"
+        '';
+      };
+
     darwinPkgs = import nixpkgs-darwin {
       system = darwinSystem;
       config = darwinNixpkgsConfig;
@@ -297,6 +310,7 @@
         rotate-amcrest-rtsp-password = rotateAmcrestRtspPasswordFor system;
         rotate-camera-password = self.packages.${system}.rotate-amcrest-rtsp-password;
         sync-ha-frigate = syncHaFrigateFor system;
+        escrow-sops-age-key = escrowSopsAgeKeyFor system;
       }
       // nixpkgs.lib.optionalAttrs (system == linuxSystem) {
         homeassistant-ci-aidan-mini = aidanMiniConfiguration.config.homelab.homeAutomation.homeAssistant.generated.ciConfigDir;
@@ -311,6 +325,10 @@
       sync-ha-frigate = {
         type = "app";
         program = "${self.packages.${system}.sync-ha-frigate}/bin/sync-ha-frigate";
+      };
+      escrow-sops-age-key = {
+        type = "app";
+        program = "${self.packages.${system}.escrow-sops-age-key}/bin/escrow-sops-age-key";
       };
     });
 

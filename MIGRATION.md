@@ -5,7 +5,7 @@
 - [ ] Verify backups are recent (storj-crypt)
 - [ ] Note down current Tailscale IP: `100.92.143.10`
 - [ ] Ensure you have LAN access: `192.168.0.69` (fallback if Tailscale breaks)
-- [ ] Have age private key ready (in macOS Keychain or Vaultwarden)
+- [ ] Have age private key ready (in macOS Keychain or as an encrypted Vaultwarden escrow artifact)
 
 ## Backup Verification
 
@@ -20,6 +20,17 @@ ssh aidan@100.92.143.10 "sudo /usr/local/bin/backup-critical.sh"
 ## Migration Steps
 
 ### 1. Export age key to temp file
+
+If you are recovering from Vaultwarden, restore the encrypted escrow artifact first:
+
+```bash
+nix run '.#escrow-sops-age-key' -- restore-file \
+  --input ~/Downloads/sops-age-key-escrow.json \
+  --output /tmp/age-key.txt
+chmod 600 /tmp/age-key.txt
+```
+
+If the key is already available in macOS Keychain, you can still export it directly:
 
 ```bash
 # On your Mac
