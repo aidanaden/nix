@@ -39,6 +39,45 @@ Afterward, remove the local artifact copy if you do not want it lying around:
 rm -f ~/Desktop/sops-age-key-escrow.json
 ```
 
+## Store directly in Vaultwarden
+
+The repo also supports an autonomous store flow using the Bitwarden CLI against your Vaultwarden server.
+
+Minimum requirement:
+
+- a Bitwarden-compatible personal API key for your Vaultwarden account
+- the vault master password available at runtime
+
+The tool uses a temporary isolated `bw` profile, so it does not disturb any existing Bitwarden CLI login on your machine.
+
+Example with environment variables:
+
+```bash
+export BW_CLIENTID='...'
+export BW_CLIENTSECRET='...'
+export BW_PASSWORD='...'
+
+nix run '.#escrow-sops-age-key' -- store-vaultwarden \
+  --server https://vault.aidanaden.com \
+  --note-name 'SOPS age key escrow'
+```
+
+Optional folder placement:
+
+```bash
+nix run '.#escrow-sops-age-key' -- store-vaultwarden \
+  --folder Infrastructure
+```
+
+You can also source the Bitwarden credentials from macOS Keychain instead of environment variables by passing the `--bw-*-keychain-account` and `--bw-*-keychain-service` flags.
+
+## Fetch the escrow artifact from Vaultwarden
+
+```bash
+nix run '.#escrow-sops-age-key' -- fetch-vaultwarden \
+  --output ~/Downloads/sops-age-key-escrow.json
+```
+
 ## Restore to a key file
 
 If you need a normal `sops` key file again:

@@ -219,7 +219,10 @@
     in
       pkgs.writeShellApplication {
         name = "escrow-sops-age-key";
-        runtimeInputs = [pythonEnv];
+        runtimeInputs = [
+          pythonEnv
+          pkgs.bitwarden-cli
+        ];
         text = ''
           exec ${pythonEnv}/bin/python ${script} "$@"
         '';

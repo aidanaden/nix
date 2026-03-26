@@ -7,8 +7,10 @@ import hashlib
 import json
 import os
 import platform
+import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NoReturn
@@ -20,6 +22,8 @@ ESCROW_KIND = "sops-age-key-escrow"
 ESCROW_VERSION = 1
 DEFAULT_ACCOUNT = "sops-age"
 DEFAULT_SERVICE = "sops-age-key"
+DEFAULT_VAULTWARDEN_SERVER = "https://vault.aidanaden.com"
+DEFAULT_VAULTWARDEN_NOTE_NAME = "SOPS age key escrow"
 
 
 def fail(message: str) -> NoReturn:
@@ -32,12 +36,14 @@ def run(
     *,
     input_text: str | None = None,
     capture_output: bool = False,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         args,
         input=input_text,
         text=True,
         capture_output=capture_output,
+        env=env,
         check=True,
     )
 
@@ -83,7 +89,14 @@ def prompt_restore_passphrase(passphrase_env: str | None) -> str:
     return getpass.getpass("Escrow passphrase: ")
 
 
-def load_key_from_keychain(account: str, service: str) -> str:
+def prompt_secret(label: str) -> str:
+    value = getpass.getpass(f"{label}: ")
+    if not value:
+        fail(f"{label} cannot be empty.")
+    return value
+
+
+def load_secret_from_keychain(account: str, service: str) -> str:
     if sys.platform != "darwin":
         fail("Keychain lookup is only available on macOS.")
 
@@ -103,11 +116,20 @@ def load_key_from_keychain(account: str, service: str) -> str:
     except subprocess.CalledProcessError as exc:
         detail = exc.stderr.strip() or exc.stdout.strip() or "security lookup failed"
         fail(
-            "Could not load the age key from macOS Keychain. "
+            "Could not load the secret from macOS Keychain. "
             f"security reported: {detail}"
         )
 
-    return ensure_age_secret_key(result.stdout)
+    value = result.stdout.strip()
+    if not value:
+        fail(
+            f"Keychain entry {account!r}/{service!r} was found but does not contain a value."
+        )
+    return value
+
+
+def load_key_from_keychain(account: str, service: str) -> str:
+    return ensure_age_secret_key(load_secret_from_keychain(account, service))
 
 
 def load_sops_age_key(
@@ -268,6 +290,219 @@ def write_private_file(path: Path, content: str, *, force: bool) -> None:
     path.chmod(0o600)
 
 
+def render_payload_text(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, indent=2) + "\n"
+
+
+def load_vaultwarden_credential(
+    *,
+    env_var: str | None,
+    keychain_account: str | None,
+    keychain_service: str | None,
+    prompt_label: str,
+) -> str:
+    if env_var:
+        value = os.environ.get(env_var)
+        if value:
+            return value
+
+    if keychain_account and keychain_service:
+        return load_secret_from_keychain(keychain_account, keychain_service)
+
+    return prompt_secret(prompt_label)
+
+
+def bw(
+    args: list[str],
+    *,
+    bw_env: dict[str, str],
+    session: str | None = None,
+    input_text: str | None = None,
+    capture_output: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    command = ["bw", *args]
+    if session:
+        command.extend(["--session", session])
+    return run(command, input_text=input_text, capture_output=capture_output, env=bw_env)
+
+
+def bw_json(
+    args: list[str],
+    *,
+    bw_env: dict[str, str],
+    session: str | None = None,
+) -> Any:
+    result = bw(args, bw_env=bw_env, session=session, capture_output=True)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        fail(f"bw returned invalid JSON for {' '.join(args)!r}: {exc}")
+
+
+def bw_encode(data: dict[str, Any], *, bw_env: dict[str, str]) -> str:
+    result = bw(["encode"], bw_env=bw_env, input_text=json.dumps(data), capture_output=True)
+    return result.stdout.strip()
+
+
+def ensure_bw_logged_in(
+    *,
+    server: str,
+    client_id: str,
+    client_secret: str,
+    password: str,
+) -> tuple[dict[str, str], str]:
+    appdata_dir = tempfile.mkdtemp(prefix="bw-cli-", dir="/tmp")
+    bw_env = os.environ.copy()
+    bw_env["BITWARDENCLI_APPDATA_DIR"] = appdata_dir
+    bw_env["BW_CLIENTID"] = client_id
+    bw_env["BW_CLIENTSECRET"] = client_secret
+    bw_env["BW_PASSWORD"] = password
+
+    try:
+        bw(["config", "server", server], bw_env=bw_env)
+        bw(["login", "--apikey"], bw_env=bw_env)
+        session = bw(
+            ["unlock", "--passwordenv", "BW_PASSWORD", "--raw"],
+            bw_env=bw_env,
+            capture_output=True,
+        ).stdout.strip()
+        if not session:
+            fail("bw unlock did not return a session key.")
+        bw_env["BW_SESSION"] = session
+        bw(["sync"], bw_env=bw_env, session=session)
+    except Exception:
+        try:
+            shutil.rmtree(appdata_dir, ignore_errors=True)
+        except Exception:
+            pass
+        raise
+
+    return bw_env, session
+
+
+def cleanup_bw_env(bw_env: dict[str, str]) -> None:
+    session = bw_env.get("BW_SESSION")
+    appdata_dir = bw_env.get("BITWARDENCLI_APPDATA_DIR")
+    try:
+        if session:
+            bw(["lock"], bw_env=bw_env, session=session)
+    except Exception:
+        pass
+    if appdata_dir:
+        try:
+            shutil.rmtree(appdata_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def ensure_folder(folder_name: str, *, bw_env: dict[str, str], session: str) -> str:
+    folders = bw_json(["list", "folders"], bw_env=bw_env, session=session)
+    matches = [folder for folder in folders if folder.get("name") == folder_name]
+    if len(matches) > 1:
+        fail(f"Found multiple Vaultwarden folders named {folder_name!r}.")
+    if matches:
+        folder_id = matches[0].get("id")
+        if not folder_id:
+            fail(f"Folder {folder_name!r} is missing an id.")
+        return str(folder_id)
+
+    created = bw_json(
+        ["create", "folder", bw_encode({"name": folder_name}, bw_env=bw_env)],
+        bw_env=bw_env,
+        session=session,
+    )
+    folder_id = created.get("id")
+    if not folder_id:
+        fail(f"Vaultwarden did not return an id for new folder {folder_name!r}.")
+    return str(folder_id)
+
+
+def find_secure_note(
+    note_name: str,
+    *,
+    bw_env: dict[str, str],
+    session: str,
+) -> dict[str, Any] | None:
+    items = bw_json(["list", "items", "--search", note_name], bw_env=bw_env, session=session)
+    matches = [
+        item
+        for item in items
+        if item.get("name") == note_name and int(item.get("type", 0)) == 2
+    ]
+    if len(matches) > 1:
+        fail(f"Found multiple secure notes named {note_name!r}.")
+    if not matches:
+        return None
+
+    item_id = matches[0].get("id")
+    if not item_id:
+        fail(f"Secure note {note_name!r} is missing an id.")
+    return bw_json(["get", "item", str(item_id)], bw_env=bw_env, session=session)
+
+
+def build_secure_note_item(
+    *,
+    note_name: str,
+    notes: str,
+    folder_id: str | None,
+    existing_item: dict[str, Any] | None,
+    template_item: dict[str, Any],
+    template_secure_note: dict[str, Any],
+) -> dict[str, Any]:
+    item = (
+        json.loads(json.dumps(existing_item))
+        if existing_item is not None
+        else json.loads(json.dumps(template_item))
+    )
+    item["type"] = 2
+    item["name"] = note_name
+    item["notes"] = notes
+    item["secureNote"] = item.get("secureNote") or json.loads(json.dumps(template_secure_note))
+    item["secureNote"]["type"] = 0
+    item["folderId"] = folder_id
+    item["favorite"] = bool(item.get("favorite", False))
+    item["reprompt"] = 1
+    return item
+
+
+def upsert_secure_note(
+    *,
+    note_name: str,
+    notes: str,
+    folder_name: str | None,
+    bw_env: dict[str, str],
+    session: str,
+) -> tuple[str, str]:
+    folder_id = ensure_folder(folder_name, bw_env=bw_env, session=session) if folder_name else None
+    existing = find_secure_note(note_name, bw_env=bw_env, session=session)
+    template_item = bw_json(["get", "template", "item"], bw_env=bw_env)
+    template_secure_note = bw_json(["get", "template", "item.secureNote"], bw_env=bw_env)
+    item = build_secure_note_item(
+        note_name=note_name,
+        notes=notes,
+        folder_id=folder_id,
+        existing_item=existing,
+        template_item=template_item,
+        template_secure_note=template_secure_note,
+    )
+    encoded = bw_encode(item, bw_env=bw_env)
+
+    if existing is None:
+        created = bw_json(["create", "item", encoded], bw_env=bw_env, session=session)
+        item_id = created.get("id")
+        if not item_id:
+            fail(f"Vaultwarden did not return an id for secure note {note_name!r}.")
+        return "created", str(item_id)
+
+    edited = bw_json(
+        ["edit", "item", str(existing["id"]), encoded],
+        bw_env=bw_env,
+        session=session,
+    )
+    item_id = edited.get("id") or existing["id"]
+    return "updated", str(item_id)
+
+
 def backup_command(args: argparse.Namespace) -> int:
     age_key, source = load_sops_age_key(
         literal_key=args.key,
@@ -301,6 +536,24 @@ def backup_command(args: argparse.Namespace) -> int:
         file=sys.stderr,
     )
     return 0
+
+
+def build_payload_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    age_key, source = load_sops_age_key(
+        literal_key=args.key,
+        key_file=args.key_file,
+        account=args.keychain_account,
+        service=args.keychain_service,
+    )
+    passphrase = prompt_passphrase(args.passphrase_env)
+    return make_payload(
+        age_key=age_key,
+        source=source,
+        passphrase=passphrase,
+        scrypt_n=args.scrypt_n,
+        scrypt_r=args.scrypt_r,
+        scrypt_p=args.scrypt_p,
+    )
 
 
 def restore_file_command(args: argparse.Namespace) -> int:
@@ -338,6 +591,121 @@ def restore_keychain_command(args: argparse.Namespace) -> int:
         f"({args.keychain_account}/{args.keychain_service}).",
         file=sys.stderr,
     )
+    return 0
+
+
+def store_vaultwarden_command(args: argparse.Namespace) -> int:
+    payload = build_payload_from_args(args)
+    rendered = render_payload_text(payload)
+
+    client_id = load_vaultwarden_credential(
+        env_var=args.bw_client_id_env,
+        keychain_account=args.bw_client_id_keychain_account,
+        keychain_service=args.bw_client_id_keychain_service,
+        prompt_label="Vaultwarden BW client ID",
+    )
+    client_secret = load_vaultwarden_credential(
+        env_var=args.bw_client_secret_env,
+        keychain_account=args.bw_client_secret_keychain_account,
+        keychain_service=args.bw_client_secret_keychain_service,
+        prompt_label="Vaultwarden BW client secret",
+    )
+    password = load_vaultwarden_credential(
+        env_var=args.bw_password_env,
+        keychain_account=args.bw_password_keychain_account,
+        keychain_service=args.bw_password_keychain_service,
+        prompt_label="Vaultwarden master password",
+    )
+
+    bw_env, session = ensure_bw_logged_in(
+        server=args.server,
+        client_id=client_id,
+        client_secret=client_secret,
+        password=password,
+    )
+
+    try:
+        action, item_id = upsert_secure_note(
+            note_name=args.note_name,
+            notes=rendered,
+            folder_name=args.folder,
+            bw_env=bw_env,
+            session=session,
+        )
+    finally:
+        cleanup_bw_env(bw_env)
+
+    print(
+        f"{action.title()} secure note {args.note_name!r} on {args.server} "
+        f"(id: {item_id}).",
+        file=sys.stderr,
+    )
+    print(
+        "Vaultwarden now contains only the encrypted escrow artifact; "
+        "the escrow passphrase should remain outside Vaultwarden.",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def fetch_vaultwarden_command(args: argparse.Namespace) -> int:
+    client_id = load_vaultwarden_credential(
+        env_var=args.bw_client_id_env,
+        keychain_account=args.bw_client_id_keychain_account,
+        keychain_service=args.bw_client_id_keychain_service,
+        prompt_label="Vaultwarden BW client ID",
+    )
+    client_secret = load_vaultwarden_credential(
+        env_var=args.bw_client_secret_env,
+        keychain_account=args.bw_client_secret_keychain_account,
+        keychain_service=args.bw_client_secret_keychain_service,
+        prompt_label="Vaultwarden BW client secret",
+    )
+    password = load_vaultwarden_credential(
+        env_var=args.bw_password_env,
+        keychain_account=args.bw_password_keychain_account,
+        keychain_service=args.bw_password_keychain_service,
+        prompt_label="Vaultwarden master password",
+    )
+
+    bw_env, session = ensure_bw_logged_in(
+        server=args.server,
+        client_id=client_id,
+        client_secret=client_secret,
+        password=password,
+    )
+
+    try:
+        item = find_secure_note(args.note_name, bw_env=bw_env, session=session)
+        if item is None:
+            fail(
+                f"Could not find secure note {args.note_name!r} on {args.server}."
+            )
+        notes = item.get("notes") or ""
+        try:
+            payload = json.loads(notes)
+        except json.JSONDecodeError as exc:
+            fail(
+                f"Secure note {args.note_name!r} does not contain valid escrow JSON: {exc}"
+            )
+
+        if payload.get("kind") != ESCROW_KIND:
+            fail(
+                f"Secure note {args.note_name!r} does not contain a {ESCROW_KIND!r} artifact."
+            )
+
+        rendered = render_payload_text(payload)
+    finally:
+        cleanup_bw_env(bw_env)
+
+    if args.output is None:
+        sys.stdout.write(rendered)
+    else:
+        write_private_file(args.output, rendered.rstrip("\n"), force=args.force)
+        print(
+            f"Wrote escrow artifact from Vaultwarden to {args.output}.",
+            file=sys.stderr,
+        )
     return 0
 
 
@@ -410,6 +778,105 @@ def build_parser() -> argparse.ArgumentParser:
         help="Read the escrow passphrase from this environment variable instead of prompting.",
     )
     restore_keychain.set_defaults(func=restore_keychain_command)
+
+    store_vaultwarden = subparsers.add_parser(
+        "store-vaultwarden",
+        help="Create an encrypted escrow artifact and upsert it into Vaultwarden as a secure note.",
+    )
+    store_vaultwarden.add_argument(
+        "--server",
+        default=DEFAULT_VAULTWARDEN_SERVER,
+        help=f"Vaultwarden server URL. Default: {DEFAULT_VAULTWARDEN_SERVER}",
+    )
+    store_vaultwarden.add_argument(
+        "--note-name",
+        default=DEFAULT_VAULTWARDEN_NOTE_NAME,
+        help=f"Secure note name to create or update. Default: {DEFAULT_VAULTWARDEN_NOTE_NAME!r}",
+    )
+    store_vaultwarden.add_argument(
+        "--folder",
+        help="Optional Vaultwarden folder name. Created automatically if missing.",
+    )
+    store_vaultwarden.add_argument("--key", help="Use this literal age private key instead of auto-discovery.")
+    store_vaultwarden.add_argument("--key-file", type=Path, help="Read the age private key from this file.")
+    store_vaultwarden.add_argument(
+        "--keychain-account",
+        default=DEFAULT_ACCOUNT,
+        help=f"macOS Keychain account to query for the age key. Default: {DEFAULT_ACCOUNT}",
+    )
+    store_vaultwarden.add_argument(
+        "--keychain-service",
+        default=DEFAULT_SERVICE,
+        help=f"macOS Keychain service to query for the age key. Default: {DEFAULT_SERVICE}",
+    )
+    store_vaultwarden.add_argument(
+        "--passphrase-env",
+        help="Read the escrow passphrase from this environment variable instead of prompting.",
+    )
+    store_vaultwarden.add_argument("--scrypt-n", type=int, default=32768, help="scrypt N parameter. Default: 32768")
+    store_vaultwarden.add_argument("--scrypt-r", type=int, default=8, help="scrypt r parameter. Default: 8")
+    store_vaultwarden.add_argument("--scrypt-p", type=int, default=1, help="scrypt p parameter. Default: 1")
+    store_vaultwarden.add_argument(
+        "--bw-client-id-env",
+        default="BW_CLIENTID",
+        help="Environment variable holding the Bitwarden API client id. Default: BW_CLIENTID",
+    )
+    store_vaultwarden.add_argument(
+        "--bw-client-secret-env",
+        default="BW_CLIENTSECRET",
+        help="Environment variable holding the Bitwarden API client secret. Default: BW_CLIENTSECRET",
+    )
+    store_vaultwarden.add_argument(
+        "--bw-password-env",
+        default="BW_PASSWORD",
+        help="Environment variable holding the vault master password. Default: BW_PASSWORD",
+    )
+    store_vaultwarden.add_argument("--bw-client-id-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client id.")
+    store_vaultwarden.add_argument("--bw-client-id-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client id.")
+    store_vaultwarden.add_argument("--bw-client-secret-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client secret.")
+    store_vaultwarden.add_argument("--bw-client-secret-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client secret.")
+    store_vaultwarden.add_argument("--bw-password-keychain-account", help="Optional macOS Keychain account for the vault master password.")
+    store_vaultwarden.add_argument("--bw-password-keychain-service", help="Optional macOS Keychain service for the vault master password.")
+    store_vaultwarden.set_defaults(func=store_vaultwarden_command)
+
+    fetch_vaultwarden = subparsers.add_parser(
+        "fetch-vaultwarden",
+        help="Fetch the escrow artifact JSON from a Vaultwarden secure note.",
+    )
+    fetch_vaultwarden.add_argument(
+        "--server",
+        default=DEFAULT_VAULTWARDEN_SERVER,
+        help=f"Vaultwarden server URL. Default: {DEFAULT_VAULTWARDEN_SERVER}",
+    )
+    fetch_vaultwarden.add_argument(
+        "--note-name",
+        default=DEFAULT_VAULTWARDEN_NOTE_NAME,
+        help=f"Secure note name to fetch. Default: {DEFAULT_VAULTWARDEN_NOTE_NAME!r}",
+    )
+    fetch_vaultwarden.add_argument("--output", type=Path, help="Destination file for the fetched escrow JSON.")
+    fetch_vaultwarden.add_argument("--force", action="store_true", help="Overwrite an existing output file.")
+    fetch_vaultwarden.add_argument(
+        "--bw-client-id-env",
+        default="BW_CLIENTID",
+        help="Environment variable holding the Bitwarden API client id. Default: BW_CLIENTID",
+    )
+    fetch_vaultwarden.add_argument(
+        "--bw-client-secret-env",
+        default="BW_CLIENTSECRET",
+        help="Environment variable holding the Bitwarden API client secret. Default: BW_CLIENTSECRET",
+    )
+    fetch_vaultwarden.add_argument(
+        "--bw-password-env",
+        default="BW_PASSWORD",
+        help="Environment variable holding the vault master password. Default: BW_PASSWORD",
+    )
+    fetch_vaultwarden.add_argument("--bw-client-id-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client id.")
+    fetch_vaultwarden.add_argument("--bw-client-id-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client id.")
+    fetch_vaultwarden.add_argument("--bw-client-secret-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client secret.")
+    fetch_vaultwarden.add_argument("--bw-client-secret-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client secret.")
+    fetch_vaultwarden.add_argument("--bw-password-keychain-account", help="Optional macOS Keychain account for the vault master password.")
+    fetch_vaultwarden.add_argument("--bw-password-keychain-service", help="Optional macOS Keychain service for the vault master password.")
+    fetch_vaultwarden.set_defaults(func=fetch_vaultwarden_command)
 
     return parser
 
