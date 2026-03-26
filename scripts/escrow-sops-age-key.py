@@ -24,6 +24,9 @@ DEFAULT_ACCOUNT = "sops-age"
 DEFAULT_SERVICE = "sops-age-key"
 DEFAULT_VAULTWARDEN_SERVER = "https://vault.aidanaden.com"
 DEFAULT_VAULTWARDEN_NOTE_NAME = "SOPS age key escrow"
+DEFAULT_BW_ACCOUNT = "bitwarden-cli"
+DEFAULT_BW_CLIENT_ID_SERVICE = "bw-client-id"
+DEFAULT_BW_CLIENT_SECRET_SERVICE = "bw-client-secret"
 
 
 def fail(message: str) -> NoReturn:
@@ -831,10 +834,26 @@ def build_parser() -> argparse.ArgumentParser:
         default="BW_PASSWORD",
         help="Environment variable holding the vault master password. Default: BW_PASSWORD",
     )
-    store_vaultwarden.add_argument("--bw-client-id-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client id.")
-    store_vaultwarden.add_argument("--bw-client-id-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client id.")
-    store_vaultwarden.add_argument("--bw-client-secret-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client secret.")
-    store_vaultwarden.add_argument("--bw-client-secret-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client secret.")
+    store_vaultwarden.add_argument(
+        "--bw-client-id-keychain-account",
+        default=DEFAULT_BW_ACCOUNT,
+        help=f"macOS Keychain account for the Bitwarden API client id. Default: {DEFAULT_BW_ACCOUNT}",
+    )
+    store_vaultwarden.add_argument(
+        "--bw-client-id-keychain-service",
+        default=DEFAULT_BW_CLIENT_ID_SERVICE,
+        help=f"macOS Keychain service for the Bitwarden API client id. Default: {DEFAULT_BW_CLIENT_ID_SERVICE}",
+    )
+    store_vaultwarden.add_argument(
+        "--bw-client-secret-keychain-account",
+        default=DEFAULT_BW_ACCOUNT,
+        help=f"macOS Keychain account for the Bitwarden API client secret. Default: {DEFAULT_BW_ACCOUNT}",
+    )
+    store_vaultwarden.add_argument(
+        "--bw-client-secret-keychain-service",
+        default=DEFAULT_BW_CLIENT_SECRET_SERVICE,
+        help=f"macOS Keychain service for the Bitwarden API client secret. Default: {DEFAULT_BW_CLIENT_SECRET_SERVICE}",
+    )
     store_vaultwarden.add_argument("--bw-password-keychain-account", help="Optional macOS Keychain account for the vault master password.")
     store_vaultwarden.add_argument("--bw-password-keychain-service", help="Optional macOS Keychain service for the vault master password.")
     store_vaultwarden.set_defaults(func=store_vaultwarden_command)
@@ -870,10 +889,26 @@ def build_parser() -> argparse.ArgumentParser:
         default="BW_PASSWORD",
         help="Environment variable holding the vault master password. Default: BW_PASSWORD",
     )
-    fetch_vaultwarden.add_argument("--bw-client-id-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client id.")
-    fetch_vaultwarden.add_argument("--bw-client-id-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client id.")
-    fetch_vaultwarden.add_argument("--bw-client-secret-keychain-account", help="Optional macOS Keychain account for the Bitwarden API client secret.")
-    fetch_vaultwarden.add_argument("--bw-client-secret-keychain-service", help="Optional macOS Keychain service for the Bitwarden API client secret.")
+    fetch_vaultwarden.add_argument(
+        "--bw-client-id-keychain-account",
+        default=DEFAULT_BW_ACCOUNT,
+        help=f"macOS Keychain account for the Bitwarden API client id. Default: {DEFAULT_BW_ACCOUNT}",
+    )
+    fetch_vaultwarden.add_argument(
+        "--bw-client-id-keychain-service",
+        default=DEFAULT_BW_CLIENT_ID_SERVICE,
+        help=f"macOS Keychain service for the Bitwarden API client id. Default: {DEFAULT_BW_CLIENT_ID_SERVICE}",
+    )
+    fetch_vaultwarden.add_argument(
+        "--bw-client-secret-keychain-account",
+        default=DEFAULT_BW_ACCOUNT,
+        help=f"macOS Keychain account for the Bitwarden API client secret. Default: {DEFAULT_BW_ACCOUNT}",
+    )
+    fetch_vaultwarden.add_argument(
+        "--bw-client-secret-keychain-service",
+        default=DEFAULT_BW_CLIENT_SECRET_SERVICE,
+        help=f"macOS Keychain service for the Bitwarden API client secret. Default: {DEFAULT_BW_CLIENT_SECRET_SERVICE}",
+    )
     fetch_vaultwarden.add_argument("--bw-password-keychain-account", help="Optional macOS Keychain account for the vault master password.")
     fetch_vaultwarden.add_argument("--bw-password-keychain-service", help="Optional macOS Keychain service for the vault master password.")
     fetch_vaultwarden.set_defaults(func=fetch_vaultwarden_command)

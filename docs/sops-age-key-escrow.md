@@ -43,24 +43,30 @@ rm -f ~/Desktop/sops-age-key-escrow.json
 
 The repo also supports an autonomous store flow using the Bitwarden CLI against your Vaultwarden server.
 
-Minimum requirement:
+Recommended local setup:
 
-- a Bitwarden-compatible personal API key for your Vaultwarden account
-- the vault master password available at runtime
+- store `BW_CLIENTID` in macOS Keychain as:
+  - account: `bitwarden-cli`
+  - service: `bw-client-id`
+- store `BW_CLIENTSECRET` in macOS Keychain as:
+  - account: `bitwarden-cli`
+  - service: `bw-client-secret`
+- keep the vault master password interactive
 
 The tool uses a temporary isolated `bw` profile, so it does not disturb any existing Bitwarden CLI login on your machine.
 
-Example with environment variables:
+With those Keychain entries in place, the default command is:
 
 ```bash
-export BW_CLIENTID='...'
-export BW_CLIENTSECRET='...'
-export BW_PASSWORD='...'
-
-nix run '.#escrow-sops-age-key' -- store-vaultwarden \
-  --server https://vault.aidanaden.com \
-  --note-name 'SOPS age key escrow'
+nix run '.#escrow-sops-age-key' -- store-vaultwarden
 ```
+
+That will prompt for:
+
+- the escrow passphrase
+- your Bitwarden master password
+
+You can still use environment variables if you want fully noninteractive operation.
 
 Optional folder placement:
 
@@ -69,7 +75,14 @@ nix run '.#escrow-sops-age-key' -- store-vaultwarden \
   --folder Infrastructure
 ```
 
-You can also source the Bitwarden credentials from macOS Keychain instead of environment variables by passing the `--bw-*-keychain-account` and `--bw-*-keychain-service` flags.
+You can override the default server, note name, or folder if you need to:
+
+```bash
+nix run '.#escrow-sops-age-key' -- store-vaultwarden \
+  --server https://vault.aidanaden.com \
+  --note-name 'SOPS age key escrow' \
+  --folder Infrastructure
+```
 
 ## Fetch the escrow artifact from Vaultwarden
 
@@ -77,6 +90,8 @@ You can also source the Bitwarden credentials from macOS Keychain instead of env
 nix run '.#escrow-sops-age-key' -- fetch-vaultwarden \
   --output ~/Downloads/sops-age-key-escrow.json
 ```
+
+By default, this will use the same Keychain-backed Bitwarden API credentials and then prompt for your Bitwarden master password.
 
 ## Restore to a key file
 
