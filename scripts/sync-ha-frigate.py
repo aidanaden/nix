@@ -145,6 +145,13 @@ def load_alarmo_storage() -> dict[str, Any] | None:
     return json.loads(storage_path.read_text())
 
 
+def load_alarmo_bootstrap(path: str) -> dict[str, Any] | None:
+    bootstrap_path = Path(path)
+    if not bootstrap_path.exists():
+        return None
+    return json.loads(bootstrap_path.read_text())
+
+
 def insert_alarmo_entry_in_storage() -> dict[str, Any]:
     config_entries_path = Path("/config/.storage/core.config_entries")
     config_entries = json.loads(config_entries_path.read_text())
@@ -172,6 +179,140 @@ def insert_alarmo_entry_in_storage() -> dict[str, Any]:
     config_entries["data"]["entries"].append(entry)
     config_entries_path.write_text(json.dumps(config_entries, separators=(",", ":")))
     return entry
+
+
+def ensure_alarmo_config(
+    base_url: str,
+    token: str,
+    *,
+    code_disarm_required: bool,
+    code_arm_required: bool,
+    code_mode_change_required: bool,
+    code_format: str,
+    disarm_after_trigger: bool,
+    ignore_blocking_sensors_after_trigger: bool,
+) -> dict[str, Any]:
+    storage = load_alarmo_storage()
+    if storage is None:
+        return {
+            "changed": False,
+            "reason": "alarmo_storage_missing",
+        }
+
+    current = storage["data"].get("config", {})
+    desired = {
+        "code_disarm_required": code_disarm_required,
+        "code_arm_required": code_arm_required,
+        "code_mode_change_required": code_mode_change_required,
+        "code_format": code_format,
+        "disarm_after_trigger": disarm_after_trigger,
+        "ignore_blocking_sensors_after_trigger": ignore_blocking_sensors_after_trigger,
+        "mqtt": current.get("mqtt", {}),
+        "master": current.get("master", {}),
+    }
+
+    current_relevant = {
+        key: current.get(key)
+        for key in [
+            "code_disarm_required",
+            "code_arm_required",
+            "code_mode_change_required",
+            "code_format",
+            "disarm_after_trigger",
+            "ignore_blocking_sensors_after_trigger",
+        ]
+    }
+    desired_relevant = {
+        key: desired[key]
+        for key in current_relevant
+    }
+
+    if current_relevant == desired_relevant:
+        return {
+            "changed": False,
+            "config": desired_relevant,
+        }
+
+    api(
+        base_url,
+        token,
+        "POST",
+        "/api/alarmo/config",
+        desired,
+    )
+    return {
+        "changed": True,
+        "config": desired_relevant,
+    }
+
+
+def ensure_alarmo_area_modes(
+    base_url: str,
+    token: str,
+    *,
+    area_name: str,
+    armed_away_enabled: bool,
+    armed_away_exit_time: int,
+    armed_away_entry_time: int,
+    armed_away_trigger_time: int,
+    armed_home_enabled: bool,
+) -> dict[str, Any]:
+    storage = load_alarmo_storage()
+    if storage is None:
+        return {
+            "changed": False,
+            "reason": "alarmo_storage_missing",
+        }
+
+    areas = storage["data"].get("areas", [])
+    area = next((item for item in areas if item.get("name") == area_name), None)
+    if area is None and areas:
+        area = areas[0]
+    if area is None:
+        fail("Alarmo storage has no areas to configure.")
+
+    current_modes = area.get("modes", {})
+    desired_modes = {
+        "armed_away": {
+            "enabled": armed_away_enabled,
+            "exit_time": armed_away_exit_time if armed_away_enabled else None,
+            "entry_time": armed_away_entry_time if armed_away_enabled else None,
+            "trigger_time": armed_away_trigger_time if armed_away_enabled else None,
+        },
+        "armed_home": {
+            "enabled": armed_home_enabled,
+            "exit_time": None,
+            "entry_time": None,
+            "trigger_time": armed_away_trigger_time if armed_home_enabled else None,
+        },
+    }
+
+    current_relevant = {
+        "armed_away": current_modes.get("armed_away"),
+        "armed_home": current_modes.get("armed_home"),
+    }
+    if current_relevant == desired_modes:
+        return {
+            "changed": False,
+            "area_id": area["area_id"],
+            "modes": desired_modes,
+        }
+
+    api(
+        base_url,
+        token,
+        "POST",
+        "/api/alarmo/area",
+        {
+            "area_id": area["area_id"],
+            "modes": desired_modes,
+        },
+    )
+    return {
+        "changed": True,
+        "area_id": area["area_id"],
+        "modes": desired_modes,
+    }
 
 
 def ensure_alarmo_sensor(
@@ -229,6 +370,74 @@ def ensure_alarmo_sensor(
         "entity_id": entity_id,
         "area": area["area_id"],
         "modes": modes,
+    }
+
+
+def ensure_alarmo_user(
+    base_url: str,
+    token: str,
+    *,
+    name: str,
+    code: str,
+    can_arm: bool,
+    can_disarm: bool,
+) -> dict[str, Any]:
+    storage = load_alarmo_storage()
+    if storage is None:
+        return {
+            "changed": False,
+            "reason": "alarmo_storage_missing",
+        }
+
+    users = storage["data"].get("users", [])
+    existing = next((user for user in users if user.get("name") == name), None)
+    desired = {
+        "name": name,
+        "code": code,
+        "enabled": True,
+        "can_arm": can_arm,
+        "can_disarm": can_disarm,
+        "is_override_code": False,
+        "area_limit": [],
+    }
+
+    current_relevant = None
+    if existing is not None:
+        current_relevant = {
+            "name": existing.get("name"),
+            "code": existing.get("code"),
+            "enabled": existing.get("enabled", True),
+            "can_arm": existing.get("can_arm", False),
+            "can_disarm": existing.get("can_disarm", False),
+            "is_override_code": existing.get("is_override_code", False),
+            "area_limit": existing.get("area_limit", []),
+        }
+
+    if current_relevant == desired:
+        return {
+            "changed": False,
+            "user_id": existing.get("user_id"),
+            "name": name,
+        }
+
+    payload = dict(desired)
+    if existing is not None:
+        payload["user_id"] = existing["user_id"]
+
+    result = api(
+        base_url,
+        token,
+        "POST",
+        "/api/alarmo/users",
+        payload,
+    )
+    if not result.get("success", False):
+        fail(f"Alarmo user update failed: {result.get('error') or result}")
+
+    return {
+        "changed": True,
+        "user_id": payload.get("user_id"),
+        "name": name,
     }
 
 
@@ -338,6 +547,14 @@ def main() -> int:
     )
     parser.add_argument("--alarmo-sensor-type", default="motion")
     parser.add_argument("--alarmo-area-name", default="Alarmo")
+    parser.add_argument(
+        "--alarmo-bootstrap-file",
+        default="/config/alarmo-bootstrap.json",
+    )
+    parser.add_argument("--alarmo-away-exit-time", type=int, default=30)
+    parser.add_argument("--alarmo-away-entry-time", type=int, default=20)
+    parser.add_argument("--alarmo-trigger-time", type=int, default=180)
+    parser.add_argument("--alarmo-enable-armed-home", action="store_true")
     parser.add_argument("--skip-mqtt", action="store_true")
     parser.add_argument("--skip-alarmo", action="store_true")
     parser.add_argument("--skip-alarmo-sensor", action="store_true")
@@ -374,7 +591,10 @@ def main() -> int:
         "frigate": None,
         "frigate_options": None,
         "alarmo": None,
+        "alarmo_config": None,
+        "alarmo_area": None,
         "alarmo_sensor": None,
+        "alarmo_user": None,
         "notify_helper": None,
     }
 
@@ -463,6 +683,8 @@ def main() -> int:
             "requires_restart": False,
         }
 
+    alarmo_bootstrap = load_alarmo_bootstrap(args.alarmo_bootstrap_file)
+
     summary["frigate_options"] = sync_frigate_options(
         args.base_url,
         token,
@@ -481,6 +703,61 @@ def main() -> int:
         summary["notify_helper"] = {
             "skipped": True,
         }
+
+    if args.skip_alarmo:
+        summary["alarmo_config"] = {
+            "skipped": True,
+        }
+        summary["alarmo_area"] = {
+            "skipped": True,
+        }
+        summary["alarmo_user"] = {
+            "skipped": True,
+        }
+    else:
+        code_value = (
+            alarmo_bootstrap.get("user_code", "") if alarmo_bootstrap is not None else ""
+        )
+        code_format = "number" if code_value.isdigit() else "text"
+        summary["alarmo_config"] = ensure_alarmo_config(
+            args.base_url,
+            token,
+            code_disarm_required=bool(code_value),
+            code_arm_required=False,
+            code_mode_change_required=False,
+            code_format=code_format,
+            disarm_after_trigger=False,
+            ignore_blocking_sensors_after_trigger=False,
+        )
+        summary["alarmo_area"] = ensure_alarmo_area_modes(
+            args.base_url,
+            token,
+            area_name=args.alarmo_area_name,
+            armed_away_enabled=True,
+            armed_away_exit_time=args.alarmo_away_exit_time,
+            armed_away_entry_time=args.alarmo_away_entry_time,
+            armed_away_trigger_time=args.alarmo_trigger_time,
+            armed_home_enabled=args.alarmo_enable_armed_home,
+        )
+        if alarmo_bootstrap is None:
+            summary["alarmo_user"] = {
+                "skipped": True,
+                "reason": "bootstrap_file_missing",
+            }
+        elif not alarmo_bootstrap.get("user_name") or not code_value:
+            summary["alarmo_user"] = {
+                "skipped": True,
+                "reason": "bootstrap_values_missing",
+            }
+        else:
+            summary["alarmo_user"] = ensure_alarmo_user(
+                args.base_url,
+                token,
+                name=alarmo_bootstrap["user_name"],
+                code=code_value,
+                can_arm=True,
+                can_disarm=True,
+            )
 
     if args.skip_alarmo or args.skip_alarmo_sensor:
         summary["alarmo_sensor"] = {
@@ -567,6 +844,14 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
         args.alarmo_sensor_type,
         "--alarmo-area-name",
         args.alarmo_area_name,
+        "--alarmo-bootstrap-file",
+        args.alarmo_bootstrap_file,
+        "--alarmo-away-exit-time",
+        str(args.alarmo_away_exit_time),
+        "--alarmo-away-entry-time",
+        str(args.alarmo_away_entry_time),
+        "--alarmo-trigger-time",
+        str(args.alarmo_trigger_time),
     ]
     if args.frigate_validate_ssl:
         remote_command.append("--frigate-validate-ssl")
@@ -580,6 +865,8 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
         remote_command.append("--skip-alarmo")
     if args.skip_alarmo_sensor:
         remote_command.append("--skip-alarmo-sensor")
+    if args.alarmo_enable_armed_home:
+        remote_command.append("--alarmo-enable-armed-home")
     command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
     command.append(shlex.join(remote_command))
     return command
@@ -617,6 +904,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--alarmo-sensor-type", default="motion")
     parser.add_argument("--alarmo-area-name", default="Alarmo")
+    parser.add_argument("--alarmo-bootstrap-file", default="/config/alarmo-bootstrap.json")
+    parser.add_argument("--alarmo-away-exit-time", type=int, default=30)
+    parser.add_argument("--alarmo-away-entry-time", type=int, default=20)
+    parser.add_argument("--alarmo-trigger-time", type=int, default=180)
+    parser.add_argument("--alarmo-enable-armed-home", action="store_true")
     parser.add_argument("--skip-mqtt", action="store_true")
     parser.add_argument("--skip-alarmo", action="store_true")
     parser.add_argument("--skip-alarmo-sensor", action="store_true")

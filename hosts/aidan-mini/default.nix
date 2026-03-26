@@ -77,6 +77,8 @@
       tailscale_auth_key = {};
       amcrest_rtsp_user = {};
       amcrest_rtsp_password = {};
+      alarmo_user_name = {};
+      alarmo_user_code = {};
     };
 
     templates."amcrest-env" = {
@@ -105,6 +107,16 @@
               - privacy_mode
       '';
     };
+
+    templates."homeassistant-alarmo-bootstrap.json" = {
+      mode = "0400";
+      content = ''
+        {
+          "user_name": "${config.sops.placeholder.alarmo_user_name}",
+          "user_code": "${config.sops.placeholder.alarmo_user_code}"
+        }
+      '';
+    };
   };
 
   services.tailscale.useRoutingFeatures = "client";
@@ -118,6 +130,7 @@
 
     homeAssistant = {
       amcrestPackageFile = config.sops.templates."homeassistant-amcrest-controls.yaml".path;
+      alarmoBootstrapFile = config.sops.templates."homeassistant-alarmo-bootstrap.json".path;
       mobileNotifyAction = "notify.mobile_app_youphone";
     };
 

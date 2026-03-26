@@ -25,6 +25,13 @@ Append that public key to `~/.ssh/authorized_keys` for `aidan` on `aidan-nas`.
 
 Camera credentials now come from `sops`, not a host-local env file. Update the encrypted values in [secrets/secrets.yaml](/Users/aidan/projects/nixos-machines/secrets/secrets.yaml) when the camera password changes, then redeploy `aidan-mini`.
 
+Alarmo bootstrap credentials now also come from `sops`:
+
+- `alarmo_user_name`
+- `alarmo_user_code`
+
+The HA sync flow uses those to seed the initial Alarmo user and enforce the default away-mode policy.
+
 Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/projects/nixos-machines/hosts/aidan-mini/default.nix) aligned with the Archer NX200 lease. The current Wi‑Fi lease is `192.168.1.6`.
 
 ## Home Assistant post-deploy steps
@@ -117,7 +124,12 @@ This tool:
 - ensures the MQTT config entry exists
 - ensures the Frigate config entry exists
 - ensures the Alarmo config entry exists
+- sets Alarmo defaults for this apartment profile:
+  - `armed_away` enabled with `30s` exit delay, `20s` entry delay, `180s` trigger time
+  - `armed_home` disabled
+  - `code_disarm_required = true` when an Alarmo user code is present
 - seeds Alarmo with `binary_sensor.studio_person_occupancy` as the first motion sensor in `armed_away`
+- seeds or updates the primary Alarmo user from the rendered `sops` bootstrap file
 - sets `input_text.frigate_notify_action` to the configured default mobile app notifier
 - sets the Frigate `rtsp_url_template` to `rtsp://frigate:8554/{{ name }}_main`
 

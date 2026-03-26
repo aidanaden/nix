@@ -786,6 +786,12 @@ in {
         description = "Optional rendered Home Assistant package file for Amcrest camera control.";
       };
 
+      alarmoBootstrapFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Optional rendered Alarmo bootstrap file consumed by the HA sync helper.";
+      };
+
       enableHacsIntegration = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -1059,6 +1065,9 @@ in {
           ++ lib.optional
           (cfg.homeAssistant.amcrestPackageFile != null)
           "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro"
+          ++ lib.optional
+          (cfg.homeAssistant.alarmoBootstrapFile != null)
+          "${cfg.homeAssistant.alarmoBootstrapFile}:/config/alarmo-bootstrap.json:ro"
           ++ lib.optionals cfg.homeAssistant.enableHacsIntegration [
             "${homeAssistantHacsIntegration}:/config/custom_components/hacs:ro"
           ]
