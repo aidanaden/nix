@@ -8,11 +8,10 @@
   yaml = pkgs.formats.yaml {};
   amcrestEntityBase = "${cfg.camera.name}_amcrest";
   homeAssistantTrustedProxies = lib.concatMapStrings (proxy: "    - ${proxy}\n") cfg.homeAssistant.trustedProxies;
-  homeAssistantHacsIntegration = pkgs.fetchFromGitHub {
-    owner = "hacs";
-    repo = "integration";
-    rev = "2.0.5";
-    hash = "sha256-xj+H75A6iwyGzMvYUjx61aGiH5DK/qYLC6clZ4cGDac=";
+  homeAssistantHacsIntegration = pkgs.fetchzip {
+    url = "https://github.com/hacs/integration/releases/download/2.0.5/hacs.zip";
+    hash = "sha256-iMomioxH7Iydy+bzJDbZxt6BX31UkCvqhXrxYFQV8Gw=";
+    stripRoot = false;
   };
   homeAssistantAlarmoIntegration = pkgs.fetchFromGitHub {
     owner = "nielsfaber";
@@ -420,7 +419,7 @@
       cp ${cfg.homeAssistant.amcrestPackageFile} "$out/packages/amcrest_controls.yaml"
     ''}
     ${lib.optionalString cfg.homeAssistant.enableHacsIntegration ''
-      cp -R ${homeAssistantHacsIntegration}/custom_components/hacs "$out/custom_components/hacs"
+      cp -R ${homeAssistantHacsIntegration}/. "$out/custom_components/hacs"
     ''}
     ${lib.optionalString cfg.homeAssistant.enableAlarmoIntegration ''
       cp -R ${homeAssistantAlarmoIntegration}/custom_components/alarmo "$out/custom_components/alarmo"
@@ -1061,7 +1060,7 @@ in {
           (cfg.homeAssistant.amcrestPackageFile != null)
           "${cfg.homeAssistant.amcrestPackageFile}:/config/packages/amcrest_controls.yaml:ro"
           ++ lib.optionals cfg.homeAssistant.enableHacsIntegration [
-            "${homeAssistantHacsIntegration}/custom_components/hacs:/config/custom_components/hacs:ro"
+            "${homeAssistantHacsIntegration}:/config/custom_components/hacs:ro"
           ]
           ++ lib.optionals cfg.homeAssistant.enableAlarmoIntegration [
             "${homeAssistantAlarmoIntegration}/custom_components/alarmo:/config/custom_components/alarmo:ro"
