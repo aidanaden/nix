@@ -160,7 +160,9 @@
 
       Use `Camera control` for fine nudges and `Camera control (long move)` for larger repositioning.
 
-      Set `Mobile notify action` to your Home Assistant phone notifier, for example `notify.mobile_app_your_phone`, then turn on `Person alerts armed` when you want person alerts.
+      `Alarmo` arms `Person alerts` automatically in `armed_away` and turns camera privacy off so Frigate can still see the room.
+
+      `Mobile notify action` is the Home Assistant notifier used for Frigate and Alarmo pushes.
     '';
   };
 
@@ -242,9 +244,9 @@
           {
             type = "markdown";
             content = ''
-              Finish Alarmo setup from **Settings > Devices & Services** to customize users, codes, sensors, and arming behavior.
+              `Alarmo` is bootstrapped with the default area and the Frigate `binary_sensor.studio_person_occupancy` sensor for `armed_away`.
 
-              The default Alarmo area is created automatically once the Alarmo integration entry exists.
+              Finish Alarmo setup from **Settings > Devices & Services** to customize users, codes, delays, and any additional sensors.
             '';
           }
         ];
@@ -321,6 +323,66 @@
                       interruption-level: time-sensitive
   '';
 
+  homeAssistantAlarmoPackage = pkgs.writeText "alarmo_automations.yaml" ''
+    automation:
+      - id: alarmo_sync_camera_and_alerts
+        alias: Alarmo Sync Camera And Alerts
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: alarm_control_panel.alarmo
+            to: armed_away
+            id: armed_away
+          - platform: state
+            entity_id: alarm_control_panel.alarmo
+            to: disarmed
+            id: disarmed
+          - platform: state
+            entity_id: alarm_control_panel.alarmo
+            to: armed_home
+            id: armed_home
+        action:
+          - choose:
+              - conditions:
+                  - condition: trigger
+                    id: armed_away
+                sequence:
+                  - service: switch.turn_off
+                    target:
+                      entity_id: switch.${amcrestEntityBase}_privacy_mode
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: input_boolean.frigate_person_alerts
+            default:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.frigate_person_alerts
+
+      - id: alarmo_triggered_mobile_alert
+        alias: Alarmo Triggered Mobile Alert
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: alarm_control_panel.alarmo
+            to: triggered
+        condition:
+          - condition: template
+            value_template: '{{ states("input_text.frigate_notify_action") | trim != "" }}'
+        action:
+          - service: '{{ states("input_text.frigate_notify_action") }}'
+            data:
+              title: "Apartment alarm triggered"
+              message: "The studio alarm detected activity while armed."
+              data:
+                clickAction: ${builtins.toJSON "${cfg.homeAssistant.externalUrl}/security-dashboard/overview"}
+                url: ${builtins.toJSON "${cfg.homeAssistant.externalUrl}/security-dashboard/overview"}
+                ttl: 0
+                priority: high
+                channel: Security Alarm
+                push:
+                  interruption-level: time-sensitive
+  '';
+
   homeAssistantConfig = pkgs.writeText "home-assistant-configuration.yaml" ''
     default_config:
 
@@ -352,6 +414,7 @@
     cp ${homeAssistantDashboard} "$out/frigate-mobile-dashboard.yaml"
     cp ${homeAssistantSecurityDashboard} "$out/security-dashboard.yaml"
     cp ${homeAssistantNotificationsPackage} "$out/packages/frigate_notifications.yaml"
+    cp ${homeAssistantAlarmoPackage} "$out/packages/alarmo_automations.yaml"
     touch "$out/automations.yaml" "$out/scripts.yaml" "$out/scenes.yaml"
     ${lib.optionalString (cfg.homeAssistant.amcrestPackageFile != null) ''
       cp ${cfg.homeAssistant.amcrestPackageFile} "$out/packages/amcrest_controls.yaml"
@@ -992,6 +1055,7 @@ in {
             "${homeAssistantDashboard}:/config/frigate-mobile-dashboard.yaml:ro"
             "${homeAssistantSecurityDashboard}:/config/security-dashboard.yaml:ro"
             "${homeAssistantNotificationsPackage}:/config/packages/frigate_notifications.yaml:ro"
+            "${homeAssistantAlarmoPackage}:/config/packages/alarmo_automations.yaml:ro"
           ]
           ++ lib.optional
           (cfg.homeAssistant.amcrestPackageFile != null)
@@ -1138,6 +1202,18 @@ in {
           ExecStart = amcrestNtpSyncScript;
         };
       };
+
+    systemd.timers.amcrest-ntp-sync = lib.mkIf (config.systemd.services ? amcrest-ntp-sync) {
+      description = "Periodically resync the Amcrest camera clock";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "10m";
+        OnUnitActiveSec = "30m";
+        RandomizedDelaySec = "2m";
+        Persistent = true;
+        Unit = "amcrest-ntp-sync.service";
+      };
+    };
 
     systemd.services.frigate-review-archive = lib.mkIf cfg.archive.enable {
       description = "Archive Frigate review clips to the NAS";

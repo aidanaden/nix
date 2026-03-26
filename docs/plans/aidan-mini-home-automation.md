@@ -51,7 +51,7 @@ Keep the reserved camera host in [hosts/aidan-mini/default.nix](/Users/aidan/pro
    - `Alarmo` backend
 7. In the HA UI, finish the app-level setup:
    - add the `HACS` integration and complete its GitHub/device auth flow
-   - complete Alarmo customization from `Settings > Devices & Services`
+   - review Alarmo from `Settings > Devices & Services`
    - use the native HA Alarm Panel card on the `Security` dashboard after you customize your alarm
 
 ## Mobile UX defaults
@@ -70,18 +70,19 @@ The repo now prewires a better HA mobile experience:
 - Home Assistant now also exposes:
   - `input_boolean.frigate_person_alerts`
   - `input_text.frigate_notify_action`
+- the default notifier is now `notify.mobile_app_youphone`
+- `Alarmo` now turns `Person alerts` on automatically in `armed_away` and off again when disarmed or switched to `armed_home`
+- `Alarmo` also turns Amcrest `privacy_mode` off when entering `armed_away`
 - The HA app should be your primary mobile surface, while the Frigate panel is the deeper review UI
 
 ## Mobile alerts
 
-Frigate person alerts are now wired declaratively in Home Assistant, but they stay inert until you point them at a phone notifier.
+Frigate person alerts are wired declaratively in Home Assistant and now default to the registered `youphone` mobile app notifier.
 
 1. Install the Home Assistant mobile app and sign into `https://ha.aidanaden.com`
 2. Allow notifications on the phone
-3. In HA, set `input_text.frigate_notify_action` to your phone's notification action
-   - example: `notify.mobile_app_your_phone`
-   - HA-only fallback for testing: `persistent_notification.create`
-4. Turn on `input_boolean.frigate_person_alerts` when you want person alerts armed
+3. Verify `input_text.frigate_notify_action` still shows `notify.mobile_app_youphone`
+4. `Alarmo` will arm and disarm `input_boolean.frigate_person_alerts` automatically for the common away/home flows
 
 The automation listens to `frigate/reviews` with `severity = alert`, so cat-only detections stay reviewable in Frigate but do not notify.
 
@@ -116,6 +117,8 @@ This tool:
 - ensures the MQTT config entry exists
 - ensures the Frigate config entry exists
 - ensures the Alarmo config entry exists
+- seeds Alarmo with `binary_sensor.studio_person_occupancy` as the first motion sensor in `armed_away`
+- sets `input_text.frigate_notify_action` to the configured default mobile app notifier
 - sets the Frigate `rtsp_url_template` to `rtsp://frigate:8554/{{ name }}_main`
 
 It assumes Home Assistant onboarding is already complete and the Frigate custom integration is already installed in HA.
@@ -136,6 +139,7 @@ The repo now also uses `aidan-mini` as the camera's LAN NTP server:
 
 - `chronyd` listens on UDP `123` on the LAN
 - `amcrest-ntp-sync.service` points the camera at `aidan-mini` and does an immediate `setCurrentTime`
+- `amcrest-ntp-sync.timer` now reruns every 30 minutes
 - rerun it manually with `sudo systemctl start amcrest-ntp-sync.service` if you ever need to force a resync
 
 ## CI validation

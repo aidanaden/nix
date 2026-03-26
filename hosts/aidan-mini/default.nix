@@ -116,7 +116,10 @@
   homelab.homeAutomation = {
     enable = true;
 
-    homeAssistant.amcrestPackageFile = config.sops.templates."homeassistant-amcrest-controls.yaml".path;
+    homeAssistant = {
+      amcrestPackageFile = config.sops.templates."homeassistant-amcrest-controls.yaml".path;
+      mobileNotifyAction = "notify.mobile_app_youphone";
+    };
 
     camera = {
       name = "studio";

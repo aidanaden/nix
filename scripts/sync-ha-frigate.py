@@ -138,6 +138,13 @@ def load_config_entry_from_storage(entry_id: str) -> dict[str, Any]:
     return entry
 
 
+def load_alarmo_storage() -> dict[str, Any] | None:
+    storage_path = Path("/config/.storage/alarmo.storage")
+    if not storage_path.exists():
+        return None
+    return json.loads(storage_path.read_text())
+
+
 def insert_alarmo_entry_in_storage() -> dict[str, Any]:
     config_entries_path = Path("/config/.storage/core.config_entries")
     config_entries = json.loads(config_entries_path.read_text())
@@ -165,6 +172,86 @@ def insert_alarmo_entry_in_storage() -> dict[str, Any]:
     config_entries["data"]["entries"].append(entry)
     config_entries_path.write_text(json.dumps(config_entries, separators=(",", ":")))
     return entry
+
+
+def ensure_alarmo_sensor(
+    base_url: str,
+    token: str,
+    entity_id: str,
+    sensor_type: str,
+    area_name: str,
+    modes: list[str],
+) -> dict[str, Any]:
+    storage = load_alarmo_storage()
+    if storage is None:
+        return {
+            "created": False,
+            "reason": "alarmo_storage_missing",
+        }
+
+    sensors = storage["data"].get("sensors", [])
+    existing = next(
+        (sensor for sensor in sensors if sensor.get("entity_id") == entity_id),
+        None,
+    )
+    if existing is not None:
+        return {
+            "created": False,
+            "entity_id": entity_id,
+            "area": existing.get("area"),
+            "modes": existing.get("modes", []),
+        }
+
+    areas = storage["data"].get("areas", [])
+    area = next((item for item in areas if item.get("name") == area_name), None)
+    if area is None and areas:
+        area = areas[0]
+    if area is None:
+        fail("Alarmo storage has no areas to attach the bootstrap sensor to.")
+
+    api(
+        base_url,
+        token,
+        "POST",
+        "/api/alarmo/sensors",
+        {
+            "entity_id": entity_id,
+            "type": sensor_type,
+            "modes": modes,
+            "use_exit_delay": True,
+            "use_entry_delay": True,
+            "enabled": True,
+            "area": area["area_id"],
+        },
+    )
+    return {
+        "created": True,
+        "entity_id": entity_id,
+        "area": area["area_id"],
+        "modes": modes,
+    }
+
+
+def set_input_text_value(
+    base_url: str,
+    token: str,
+    entity_id: str,
+    value: str,
+) -> dict[str, Any]:
+    api(
+        base_url,
+        token,
+        "POST",
+        "/api/services/input_text/set_value",
+        {
+            "entity_id": entity_id,
+            "value": value,
+        },
+    )
+    return {
+        "entity_id": entity_id,
+        "value": value,
+    }
 
 
 def sync_frigate_options(
@@ -227,8 +314,8 @@ def sync_frigate_options(
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Ensure Home Assistant MQTT + Frigate entries exist "
-            "and prefer the high-quality Frigate live stream."
+            "Ensure Home Assistant MQTT, Frigate, and Alarmo are bootstrapped, "
+            "prefer the Frigate high-quality live stream, and seed mobile notifications."
         )
     )
     parser.add_argument("--base-url", default="http://127.0.0.1:8123")
@@ -244,8 +331,16 @@ def main() -> int:
         "--rtsp-url-template",
         default="rtsp://frigate:8554/{{ name }}_main",
     )
+    parser.add_argument("--default-notify-service", default="")
+    parser.add_argument(
+        "--alarmo-sensor-entity",
+        default="binary_sensor.studio_person_occupancy",
+    )
+    parser.add_argument("--alarmo-sensor-type", default="motion")
+    parser.add_argument("--alarmo-area-name", default="Alarmo")
     parser.add_argument("--skip-mqtt", action="store_true")
     parser.add_argument("--skip-alarmo", action="store_true")
+    parser.add_argument("--skip-alarmo-sensor", action="store_true")
     args = parser.parse_args()
 
     token = get_access_token(args.base_url, args.ha_user_name, args.client_id)
@@ -279,6 +374,8 @@ def main() -> int:
         "frigate": None,
         "frigate_options": None,
         "alarmo": None,
+        "alarmo_sensor": None,
+        "notify_helper": None,
     }
 
     if not args.skip_mqtt:
@@ -373,6 +470,32 @@ def main() -> int:
         args.rtsp_url_template,
     )
 
+    if args.default_notify_service:
+        summary["notify_helper"] = set_input_text_value(
+            args.base_url,
+            token,
+            "input_text.frigate_notify_action",
+            args.default_notify_service,
+        )
+    else:
+        summary["notify_helper"] = {
+            "skipped": True,
+        }
+
+    if args.skip_alarmo or args.skip_alarmo_sensor:
+        summary["alarmo_sensor"] = {
+            "skipped": True,
+        }
+    else:
+        summary["alarmo_sensor"] = ensure_alarmo_sensor(
+            args.base_url,
+            token,
+            args.alarmo_sensor_entity,
+            args.alarmo_sensor_type,
+            args.alarmo_area_name,
+            ["armed_away"],
+        )
+
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
@@ -436,6 +559,14 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
         args.frigate_url,
         "--rtsp-url-template",
         args.rtsp_url_template,
+        "--default-notify-service",
+        args.default_notify_service,
+        "--alarmo-sensor-entity",
+        args.alarmo_sensor_entity,
+        "--alarmo-sensor-type",
+        args.alarmo_sensor_type,
+        "--alarmo-area-name",
+        args.alarmo_area_name,
     ]
     if args.frigate_validate_ssl:
         remote_command.append("--frigate-validate-ssl")
@@ -447,6 +578,8 @@ def build_remote_command(args: argparse.Namespace) -> list[str]:
         remote_command.append("--skip-mqtt")
     if args.skip_alarmo:
         remote_command.append("--skip-alarmo")
+    if args.skip_alarmo_sensor:
+        remote_command.append("--skip-alarmo-sensor")
     command = ssh_prefix(args.deploy_user, args.deploy_host, args.ssh_option)
     command.append(shlex.join(remote_command))
     return command
@@ -456,7 +589,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Sync Home Assistant's MQTT, Frigate, and Alarmo integrations "
-            "so HA uses the high-quality Frigate main stream."
+            "so HA uses the high-quality Frigate main stream and has a usable security baseline."
         )
     )
     parser.add_argument("--deploy-user", default="aidan")
@@ -477,8 +610,16 @@ def parse_args() -> argparse.Namespace:
         "--rtsp-url-template",
         default="rtsp://frigate:8554/{{ name }}_main",
     )
+    parser.add_argument("--default-notify-service", default="notify.mobile_app_youphone")
+    parser.add_argument(
+        "--alarmo-sensor-entity",
+        default="binary_sensor.studio_person_occupancy",
+    )
+    parser.add_argument("--alarmo-sensor-type", default="motion")
+    parser.add_argument("--alarmo-area-name", default="Alarmo")
     parser.add_argument("--skip-mqtt", action="store_true")
     parser.add_argument("--skip-alarmo", action="store_true")
+    parser.add_argument("--skip-alarmo-sensor", action="store_true")
     parser.add_argument(
         "--ssh-option",
         action="append",
