@@ -110,16 +110,19 @@ docker run --rm authelia/authelia:latest \
 
 ### Data Disks (preserved, mounted by UUID)
 
+Kernel device names on the live OMV host may shift after hotplug or reboot.
+Treat the UUIDs as authoritative.
+
 | Disk | Size | UUID                                 | Mount      |
 | ---- | ---- | ------------------------------------ | ---------- |
-| sdb  | 1.8T | 48e46356-3374-4198-a5f2-fe1683b4a675 | /srv/disk1 |
-| sdc  | 2.7T | f7609add-b8af-4045-bf46-a6a4954b52ef | /srv/disk2 |
-| sdd  | 1.8T | 59990e40-4545-4024-8201-170449926f30 | /srv/disk3 |
-| sde  | 3.6T | adaa0676-75c8-4193-8663-fa170324a134 | /srv/disk4 |
-| sdf  | 3.6T | 0805c2d3-9704-4870-a253-60a6ec9c429c | /srv/disk5 |
-| sdg  | 3.6T | 65193c76-48d3-48d8-bcee-837cf381dd47 | /srv/disk6 |
-| sdh  | 3.6T | 9287a573-8dc5-4ae8-b362-4c8c80343984 | /srv/disk7 |
-| sdi  | 2.7T | 15b064c3-da6e-4476-b141-19833c2acff9 | /srv/disk8 |
+| sdb  | 1.8T  | 48e46356-3374-4198-a5f2-fe1683b4a675 | /srv/disk1 |
+| sdc  | 2.7T  | f7609add-b8af-4045-bf46-a6a4954b52ef | /srv/disk2 |
+| sdd  | 1.8T  | 59990e40-4545-4024-8201-170449926f30 | /srv/disk3 |
+| sde  | 3.6T  | adaa0676-75c8-4193-8663-fa170324a134 | /srv/disk4 |
+| sdi  | 14.6T | c0bcf2c9-36f1-40b8-bdb0-3eeffd8f6659 | /srv/disk5 |
+| sdf  | 3.6T  | 65193c76-48d3-48d8-bcee-837cf381dd47 | /srv/disk6 |
+| sdg  | 3.6T  | 9287a573-8dc5-4ae8-b362-4c8c80343984 | /srv/disk7 |
+| sdh  | 2.7T  | 15b064c3-da6e-4476-b141-19833c2acff9 | /srv/disk8 |
 
 **mergerfs pool:** `/srv/disk*` -> `/srv/mergerfs/data` (~17TB)
 

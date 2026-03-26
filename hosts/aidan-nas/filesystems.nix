@@ -23,7 +23,7 @@
       options = ["noatime" "nofail"];
     };
     "/srv/disk5" = {
-      device = "/dev/disk/by-uuid/0805c2d3-9704-4870-a253-60a6ec9c429c";
+      device = "/dev/disk/by-uuid/c0bcf2c9-36f1-40b8-bdb0-3eeffd8f6659";
       fsType = "ext4";
       options = ["noatime" "nofail"];
     };
