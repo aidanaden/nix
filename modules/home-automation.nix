@@ -95,6 +95,10 @@
         name = "Mobile notify action";
       }
       {
+        entity = "input_text.home_wifi_ssid";
+        name = "Home Wi-Fi SSID";
+      }
+      {
         entity = "switch.${amcrestEntityBase}_privacy_mode";
         name = "Privacy mode";
       }
@@ -162,6 +166,8 @@
       `Alarmo` arms `Person alerts` automatically in `armed_away` and turns camera privacy off so Frigate can still see the room.
 
       `Mobile notify action` is the Home Assistant notifier used for Frigate and Alarmo pushes.
+
+      Set `Home Wi-Fi SSID` to your apartment Wi-Fi name to enable the automatic privacy policy.
     '';
   };
 
@@ -222,6 +228,18 @@
                 name = "Privacy mode";
               }
               {
+                entity = "input_text.home_wifi_ssid";
+                name = "Home Wi-Fi SSID";
+              }
+              {
+                entity = "sensor.youphone_ssid";
+                name = "Phone Wi-Fi SSID";
+              }
+              {
+                entity = "person.aidan";
+                name = "Aidan presence";
+              }
+              {
                 entity = "binary_sensor.${amcrestEntityBase}_online";
                 name = "Camera online";
               }
@@ -270,6 +288,11 @@
         icon: mdi:cellphone-message
         max: 255
         initial: ${builtins.toJSON cfg.homeAssistant.mobileNotifyAction}
+      home_wifi_ssid:
+        name: Home Wi-Fi SSID
+        icon: mdi:wifi
+        max: 255
+        initial: ""
 
     automation:
       - id: frigate_mobile_person_alerts
@@ -380,6 +403,83 @@
                 channel: Security Alarm
                 push:
                   interruption-level: time-sensitive
+
+      - id: camera_privacy_when_home_on_wifi
+        alias: Camera Privacy When Home On Wi-Fi
+        mode: restart
+        trigger:
+          - platform: state
+            entity_id: person.aidan
+            to: home
+            for: "00:05:00"
+          - platform: state
+            entity_id: sensor.youphone_ssid
+            for: "00:05:00"
+        condition:
+          - condition: template
+            value_template: '{{ states("input_text.home_wifi_ssid") | trim != "" }}'
+          - condition: state
+            entity_id: person.aidan
+            state: home
+          - condition: template
+            value_template: >-
+              {{ (states("sensor.youphone_ssid") | trim) == (states("input_text.home_wifi_ssid") | trim) }}
+          - condition: state
+            entity_id: alarm_control_panel.alarmo
+            state: disarmed
+        action:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.${amcrestEntityBase}_privacy_mode
+
+      - id: camera_privacy_off_when_away
+        alias: Camera Privacy Off When Away
+        mode: restart
+        trigger:
+          - platform: state
+            entity_id: person.aidan
+            from: home
+            for: "00:01:00"
+        condition:
+          - condition: state
+            entity_id: switch.${amcrestEntityBase}_privacy_mode
+            state: "on"
+        action:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.${amcrestEntityBase}_privacy_mode
+
+      - id: camera_privacy_fail_safe_arm_away
+        alias: Camera Privacy Fail Safe Arm Away
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: person.aidan
+            from: home
+            for: "00:05:00"
+        condition:
+          - condition: state
+            entity_id: switch.${amcrestEntityBase}_privacy_mode
+            state: "on"
+        action:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.${amcrestEntityBase}_privacy_mode
+          - service: alarm_control_panel.alarm_arm_away
+            target:
+              entity_id: alarm_control_panel.alarmo
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: '{{ states("input_text.frigate_notify_action") | trim != "" }}'
+                sequence:
+                  - service: '{{ states("input_text.frigate_notify_action") }}'
+                    data:
+                      title: "Camera privacy fail-safe"
+                      message: "Home Assistant detected you away while the camera stayed private, so it re-armed the apartment alarm."
+                      data:
+                        clickAction: ${builtins.toJSON "${cfg.homeAssistant.externalUrl}/security-dashboard/overview"}
+                        url: ${builtins.toJSON "${cfg.homeAssistant.externalUrl}/security-dashboard/overview"}
   '';
 
   homeAssistantConfig = pkgs.writeText "home-assistant-configuration.yaml" ''
